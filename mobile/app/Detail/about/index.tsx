@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 
-const about = () => {
+const About = () => {
   const scheme = useColorScheme();
 
   const handleBack = () => {
@@ -117,4 +117,4 @@ const about = () => {
   );
 };
 
-export default about;
+export default About;

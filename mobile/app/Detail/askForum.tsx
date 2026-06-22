@@ -22,7 +22,7 @@ interface ImagePickerResult {
   assets: Array<{ uri: string }> | null;
 }
 
-const askForum = () => {
+const AskForum = () => {
   const [topic, setTopic] = useState("");
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<string[]>([]);
@@ -311,4 +311,4 @@ const askForum = () => {
   );
 };
 
-export default askForum;
+export default AskForum;

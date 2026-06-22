@@ -1,4 +1,6 @@
 import { initializeApp } from "firebase/app";
+// Expo/Metro resolves the react-native export condition for this import.
+// eslint-disable-next-line import/named
 import { initializeAuth, getReactNativePersistence } from "firebase/auth";
 import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
 
