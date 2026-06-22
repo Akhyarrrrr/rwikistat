@@ -42,6 +42,8 @@ npm install
 npm run dev
 ```
 
+`npm run build` di frontend juga membutuhkan nilai `NEXT_PUBLIC_FIREBASE_*` di `frontend/.env.local`.
+
 7. Jalankan mobile:
 
 ```bash
