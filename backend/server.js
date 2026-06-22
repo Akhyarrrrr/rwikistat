@@ -6,10 +6,10 @@ const bcrypt = require("bcryptjs");
 const cors = require("cors");
 const path = require("path");
 
-const port = 8080;
+const port = process.env.PORT || 8080;
 app.use(
   cors({
-    origin: "*", // Replace with the correct origin
+    origin: process.env.CORS_ORIGIN || "*",
   })
 );
 
@@ -49,6 +49,10 @@ app.use("/api/history", historyApi);
 
 // Middleware untuk memberikan akses ke direktori uploads
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+app.get("/health", (req, res) => {
+  res.json({ ok: true });
+});
 
 app.get("/:userId", async (req, res) => {
   try {
@@ -103,8 +107,7 @@ app.post("/login", async (req, res) => {
 app.post("/google-login", async (req, res) => {
   const { email, role, uid, displayName, photoURL } = req.body;
   const score = 0;
-  data = { email, role, displayName, photoURL, score };
-  docRef = uid;
+  const data = { email, role, displayName, photoURL, score };
 
   if (!uid) {
     res
