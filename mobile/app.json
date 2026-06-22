@@ -1,0 +1,88 @@
+{
+  "expo": {
+    "name": "RWikiStat",
+    "slug": "RWikiStat",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "myapp",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "version": "1.0.2",
+    "ios": {
+      "buildNumber": "3",
+      "useAppleSignIn": true,
+      "supportsTablet": true,
+      "bundleIdentifier": "com.usk.rwikistat",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.72157531364-jmiogtei3uqe61eqmtpm4q3v487udhke"
+            ]
+          },
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.72157531364-jmiogtei3uqe61eqmtpm4q3v487udhke"
+            ]
+          }
+        ],
+        "NSCameraUsageDescription": "Kami membutuhkan akses ke kamera Anda untuk mengunggah foto.",
+        "NSPhotoLibraryUsageDescription": "Kami membutuhkan akses ke galeri foto Anda untuk mengunggah foto.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        },
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "buildNumber": "2",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.usk.rwikistat",
+      "googleServicesFile": "./google-services.json"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-apple-authentication",
+      "expo-router",
+      "expo-font",
+      "@react-native-google-signin/google-signin",
+      "@react-native-firebase/app",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          },
+          "ios": {
+            "useFrameworks": "static",
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "owner": "rwikistat",
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "5d4cdd27-3ef5-493b-9ae1-ed3a06ce3415"
+      }
+    }
+  }
+}
