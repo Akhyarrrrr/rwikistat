@@ -1,11 +1,18 @@
 "use client";
-import React, { useState, useEffect, FormEvent, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  FormEvent,
+  useRef,
+  useCallback,
+} from "react";
 import axios from "axios";
 import { auth } from "@/app/firebase";
 import { UserAuth } from "@/app/context/authContext";
 import SendIcon from "@mui/icons-material/Send";
 import Box from "@mui/material/Box";
 import config from "@/config.js";
+import { getFirebaseIdTokenHeaders } from "@/lib/authHeaders";
 
 interface ChatData {
   id: string;
@@ -19,38 +26,35 @@ interface ChatData {
 }
 
 const ChatBot = () => {
-  useEffect(() => {
-    document.title = "Chat Bot | Rwikistat";
-    scrollToBottom();
-    return () => {};
-  }, []);
-
   const { user } = UserAuth();
   const [loading, setLoading] = useState(false);
   const [userMessage, setUserMessage] = useState("");
   const [chatData, setChatData] = useState<ChatData[]>([]);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    scrollToBottom(); // Memanggil fungsi untuk mengatur fokus pada percakapan terbaru setiap kali chatData berubah
-  }, [chatData]);
-
   // Fungsi untuk mengatur fokus pada percakapan terbaru (di bagian bawah)
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollIntoView({
         behavior: "auto",
         block: "end",
       });
     }
-  };
+  }, []);
 
-  const fetchChatData = async () => {
+  useEffect(() => {
+    document.title = "Chat Bot | Rwikistat";
+    scrollToBottom();
+  }, [scrollToBottom]);
+
+  useEffect(() => {
+    scrollToBottom(); // Memanggil fungsi untuk mengatur fokus pada percakapan terbaru setiap kali chatData berubah
+  }, [chatData, scrollToBottom]);
+
+  const fetchChatData = useCallback(async () => {
     try {
-      const storedToken = localStorage.getItem("customToken");
       if (user) {
         const userId = user.uid;
-        console.log(user);
         // Fetch data dari endpoint berdasarkan userId
         const response = await fetch(
           `${config.API_URL}/api/chatbot/chats/${userId}`,
@@ -58,13 +62,12 @@ const ChatBot = () => {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${storedToken}`,
+              ...getFirebaseIdTokenHeaders(),
             },
           }
         );
 
         const chatData = await response.json();
-        console.log(chatData);
 
         const sortedChatData = chatData
           .sort(
@@ -88,7 +91,7 @@ const ChatBot = () => {
     } catch (error) {
       console.error("Error fetching chat data:", error);
     }
-  };
+  }, [user]);
 
   const refreshChatbotData = async () => {
     await fetchChatData();
@@ -98,25 +101,21 @@ const ChatBot = () => {
   const handleChatSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    console.log("Submitting chat...");
-    const storedToken = localStorage.getItem("customToken");
     // Dapatkan ID user
     const user = auth.currentUser;
     const userId = user?.uid;
-    console.log(userId);
 
     // Panggil API untuk menyimpan pertanyaan dan respons
     const response = await fetch(`${config.API_URL}/api/chatbot/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${storedToken}`,
+        ...getFirebaseIdTokenHeaders(),
       },
       body: JSON.stringify({ userId, userMessage }),
     });
 
-    const data = await response.json();
-    console.log(data);
+    await response.json();
 
     // Refresh data chatbot setelah submit berhasil
     await refreshChatbotData();
@@ -127,7 +126,7 @@ const ChatBot = () => {
 
   useEffect(() => {
     fetchChatData();
-  }, [user]);
+  }, [fetchChatData]);
 
   return (
     <div className="flex flex-col justify-between items-center h-screen overflow-hidden">

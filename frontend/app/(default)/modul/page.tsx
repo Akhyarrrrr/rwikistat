@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import axios from "axios";
 import ChipDelete from "@mui/joy/ChipDelete";
@@ -15,6 +15,7 @@ import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
 import IconButton from "@mui/joy/IconButton";
 import { UserAuth } from "@/app/context/authContext";
 import config from "@/config.js";
+import { getFirebaseIdTokenHeaders } from "@/lib/authHeaders";
 
 function ModulList() {
   // Buat sebuah jenis yang mencerminkan struktur data dari API
@@ -57,15 +58,10 @@ function ModulList() {
     checkUser();
   }, [user]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const storedToken = localStorage.getItem("customToken");
-      const headers = {
-        Authorization: `Bearer ${storedToken}`,
-      };
-
       const response = await axios.get(`${config.API_URL}/api/modul`, {
-        headers,
+        headers: getFirebaseIdTokenHeaders(),
       });
       if (response.status === 200) {
         const sortedData = response.data.sort((a: ModulData, b: ModulData) => {
@@ -81,11 +77,11 @@ function ModulList() {
     } catch (error) {
       console.error("Gagal mengambil data:", error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleOpen = (id: number) => {
     setOpen(id);
@@ -97,17 +93,12 @@ function ModulList() {
 
   const handleDelete = (id: number) => {
     // Mendapatkan token dari localStorage atau sumber lainnya
-    const storedToken = localStorage.getItem("customToken");
-
-    // Membuat header dengan menyertakan token
-    const headers = {
-      Authorization: `Bearer ${storedToken}`,
-    };
     // Panggil endpoint dengan menggunakan ID modul
     axios
-      .delete(`${config.API_URL}/api/modul/${id}`, { headers })
+      .delete(`${config.API_URL}/api/modul/${id}`, {
+        headers: getFirebaseIdTokenHeaders(),
+      })
       .then((response) => {
-        console.log(id);
         setOpen(null);
         fetchData();
       })

@@ -89,7 +89,6 @@ const VeriviedCard = ({ id, imageName, imageUrl }: VeriviedData) => {
       // Periksa apakah respon adalah sukses (status kode 200)
       if (response.ok) {
         // Tambahkan logika untuk menangani jika gambar berhasil dihapus
-        console.log("Image deleted successfully");
         setOpen(false);
         // Tambahkan logika untuk memperbarui tampilan setelah gambar dihapus
       } else {

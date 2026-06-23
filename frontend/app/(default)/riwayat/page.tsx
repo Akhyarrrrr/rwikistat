@@ -20,6 +20,7 @@ import config from "@/config.js";
 import ImageHistoryCard from "@/components/ImageHistoryCard";
 import { UserAuth } from "@/app/context/authContext";
 import { auth } from "@/app/firebase";
+import { getFirebaseIdTokenHeaders } from "@/lib/authHeaders";
 
 // Buat sebuah jenis yang mencerminkan struktur data dari API
 interface imageData {
@@ -42,24 +43,16 @@ function History() {
 
   const fetchData = async () => {
     try {
-      // Mendapatkan token dari localStorage atau sumber lainnya
-      const storedToken = localStorage.getItem("customToken");
-
-      // Membuat header dengan menyertakan token
-      const headers = {
-        Authorization: `Bearer ${storedToken}`,
-      };
       const user = auth.currentUser;
       if (user) {
         const uid = user.uid;
 
         const response = await axios.get(
           `${config.API_URL}/api/history/${uid}`,
-          { headers }
+          { headers: getFirebaseIdTokenHeaders() }
         );
         if (response.status === 200) {
           setTestData(response.data);
-          console.log("data", response.data);
         } else {
           console.error("Gagal mengambil data:", response.statusText);
         }

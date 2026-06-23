@@ -4,6 +4,7 @@ import CodeEditorWindow from "@/components/compiler/CodeEditorWindows";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import config from "@/config.js";
+import { getFirebaseIdTokenHeaders } from "@/lib/authHeaders";
 
 const CodeEditor = () => {
   useEffect(() => {
@@ -19,13 +20,12 @@ const CodeEditor = () => {
   const handleRunString = async () => {
     try {
       setProcessing(true);
-      const storedToken = localStorage.getItem("customToken");
 
       const response = await fetch(`${config.API_URL}/api/compiler/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${storedToken}`,
+          ...getFirebaseIdTokenHeaders(),
         },
         body: JSON.stringify({ code }),
       });
@@ -43,7 +43,6 @@ const CodeEditor = () => {
   const handleRunGraph = async () => {
     try {
       setProcessing(true);
-      const storedToken = localStorage.getItem("customToken");
 
       const response = await fetch(
         `${config.API_URL}/api/compiler/newshiny-web`,
@@ -51,7 +50,7 @@ const CodeEditor = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${storedToken}`,
+            ...getFirebaseIdTokenHeaders(),
           },
           body: JSON.stringify({ code }),
         }

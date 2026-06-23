@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { UserAuth } from "@/app/context/authContext";
 import GlobalStyles from "@mui/joy/GlobalStyles";
 import Avatar from "@mui/joy/Avatar";
@@ -42,6 +42,7 @@ import ColorSchemeToggle from "./ColorSchemeToggle";
 import { closeSidebar } from "@/components/utils";
 import { MdVerified } from "react-icons/md";
 import SupervisorAccountIcon from "@mui/icons-material/SupervisorAccount";
+import { getFirebaseIdTokenHeaders } from "@/lib/authHeaders";
 
 function Toggler({
   defaultExpanded = false,
@@ -100,15 +101,12 @@ export default function Sidebar() {
     checkUser();
   }, [user]);
 
-  const fetchUser = async () => {
+  const fetchUser = useCallback(async () => {
     if (user) {
       const id = user.uid;
-      const storedToken = localStorage.getItem("customToken");
       // Lakukan permintaan ke API untuk mendapatkan data detail modul berdasarkan ID
       fetch(`${config.API_URL}/api/user/${id}`, {
-        headers: {
-          Authorization: `Bearer ${storedToken}`,
-        },
+        headers: getFirebaseIdTokenHeaders(),
       })
         .then((response) => {
           if (!response.ok) {
@@ -118,17 +116,16 @@ export default function Sidebar() {
         })
         .then((data) => {
           setDetailUser(data); // Menyimpan data detail modul dalam state
-          console.log("datauser", data);
         })
         .catch((error) => {
           console.error("There was an error!", error);
-        });
+      });
     }
-  };
+  }, [user]);
   useEffect(() => {
     // Memanggil fetchData untuk mengambil data awal
     fetchUser();
-  }, [user]);
+  }, [fetchUser]);
 
   const [loading, setLoading] = useState(true);
   const photoURL = user?.photoURL || "";
@@ -137,7 +134,7 @@ export default function Sidebar() {
     try {
       await logOut();
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   };
 

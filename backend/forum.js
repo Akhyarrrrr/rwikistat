@@ -3,33 +3,7 @@ const adminConfig = require("./adminConfig");
 const multer = require("multer");
 const router = express.Router();
 const upload = multer();
-const { admin, firestore, storage } = adminConfig;
-
-// Middleware untuk verifikasi token bearer
-const verifyToken = (req, res, next) => {
-  const bearerHeader = req.headers["authorization"];
-
-  if (typeof bearerHeader !== "undefined") {
-    const bearerToken = bearerHeader.split(" ")[1];
-    req.token = bearerToken;
-
-    // Verifikasi token menggunakan Firebase Admin SDK atau metode autentikasi yang sesuai
-    admin
-      .auth()
-      .verifyIdToken(bearerToken)
-      .then((decodedToken) => {
-        req.user = decodedToken;
-        next(); // Lanjutkan ke middleware atau fungsi berikutnya setelah autentikasi
-      })
-      .catch((error) => {
-        console.error("Token tidak valid:", error);
-        res.status(403).json({ error: "Token tidak valid." });
-      });
-  } else {
-    // Jika tidak ada token
-    res.status(403).json({ error: "Akses ditolak. Token tidak ditemukan." });
-  }
-};
+const { firestore, storage } = adminConfig;
 
 // Fungsi untuk menambah skor ke koleksi users
 async function addScoreToUser(uid, scoreToAdd) {

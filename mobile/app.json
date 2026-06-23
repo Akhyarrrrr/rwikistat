@@ -16,7 +16,7 @@
       "buildNumber": "3",
       "useAppleSignIn": true,
       "supportsTablet": true,
-      "bundleIdentifier": "com.usk.rwikistat",
+      "bundleIdentifier": "com.rwikistat.ios",
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "CFBundleURLTypes": [
@@ -45,7 +45,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.usk.rwikistat",
+      "package": "com.rwikistat.android",
       "googleServicesFile": "./google-services.json"
     },
     "web": {

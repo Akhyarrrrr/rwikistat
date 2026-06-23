@@ -106,7 +106,6 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
       });
 
       if (response.ok) {
-        console.log("Data pengguna berhasil disimpan di server.");
       } else {
         console.error("Gagal mengirim data pengguna ke server.");
       }

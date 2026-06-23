@@ -1,5 +1,4 @@
 const express = require("express");
-const { admin, storage, firestore } = require("./adminConfig");
 const { spawn } = require("child_process");
 const fs = require("fs");
 const { PNG } = require("pngjs");
@@ -20,32 +19,6 @@ const writeTempRFile = (code) => {
 const cleanupFile = (filePath) => {
   if (filePath && fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
-  }
-};
-
-// Middleware untuk verifikasi token bearer
-const verifyToken = (req, res, next) => {
-  const bearerHeader = req.headers["authorization"];
-
-  if (typeof bearerHeader !== "undefined") {
-    const bearerToken = bearerHeader.split(" ")[1];
-    req.token = bearerToken;
-
-    // Verifikasi token menggunakan Firebase Admin SDK atau metode autentikasi yang sesuai
-    admin
-      .auth()
-      .verifyIdToken(bearerToken)
-      .then((decodedToken) => {
-        req.user = decodedToken;
-        next(); // Lanjutkan ke middleware atau fungsi berikutnya setelah autentikasi
-      })
-      .catch((error) => {
-        console.error("Token tidak valid:", error);
-        res.status(403).json({ error: "Token tidak valid." });
-      });
-  } else {
-    // Jika tidak ada token
-    res.status(403).json({ error: "Akses ditolak. Token tidak ditemukan." });
   }
 };
 
@@ -132,7 +105,6 @@ router.post("/test/", (req, res) => {
         } else {
           // File sent successfully
           fs.unlinkSync(pngFilePath);
-          // console.log('File sent:', pngFilePath);
         }
       });
     } else {
@@ -240,19 +212,17 @@ router.post("/check-port", async (req, res) => {
     detect(port)
       .then((_port) => {
         if (port == _port) {
-          // console.log(`port: ${port} was not occupied`);
           res
             .status(200)
             .json({ message: `Port ${port} tidak digunakan`, status: "false" });
         } else {
-          // console.log(`port: ${port} was occupied, try port: ${_port}`);
           res
             .status(200)
             .json({ message: `Port ${port} sedang digunakan`, status: "true" });
         }
       })
       .catch((err) => {
-        console.log(err);
+        console.error("Failed to check port:", err);
       });
   } catch (err) {
     res.status(500).json({
@@ -279,13 +249,11 @@ router.post("/check-ports", async (req, res) => {
           detect(port)
             .then((_port) => {
               if (port == _port) {
-                // console.log(`port: ${port} was not occupied`);
                 res.status(200).json({
                   message: `Port ${port} tidak digunakan`,
                   status: "false",
                 });
               } else {
-                // console.log(`port: ${port} was occupied, try port: ${_port}`);
                 res.status(200).json({
                   message: `Port ${port} sedang digunakan`,
                   status: "true",
@@ -293,7 +261,7 @@ router.post("/check-ports", async (req, res) => {
               }
             })
             .catch((err) => {
-              console.log(err);
+              console.error("Failed to check port:", err);
             });
         } catch (err) {
           return {
@@ -325,7 +293,6 @@ const runShiny = async (req, res) => {
     }
 
     filePath = writeTempRFile(code);
-    // console.log(`File created: ${filePath}`);
 
     const port = await detect();
 

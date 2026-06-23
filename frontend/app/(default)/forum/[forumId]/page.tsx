@@ -14,6 +14,7 @@ import { MdVerified } from "react-icons/md";
 import Link from "next/link";
 import config from "@/config.js";
 import Bookmark from "@/components/Bookmark";
+import { getFirebaseIdTokenHeaders } from "@/lib/authHeaders";
 
 export default function DetailPage() {
   useEffect(() => {
@@ -35,13 +36,7 @@ export default function DetailPage() {
 
   useEffect(() => {
     if (forumId) {
-      // Mendapatkan token dari localStorage atau sumber lainnya
-      const storedToken = localStorage.getItem("customToken");
-
-      // Membuat header dengan menyertakan token
-      const headers = {
-        Authorization: `Bearer ${storedToken}`,
-      };
+      const headers = getFirebaseIdTokenHeaders();
       // Lakukan permintaan ke API untuk mendapatkan data detail modul berdasarkan ID
       fetch(`${config.API_URL}/api/forum/${forumId}`, { headers })
         .then((response) => {
@@ -118,13 +113,7 @@ export default function DetailPage() {
         console.error("Pengguna belum terotentikasi atau belum masuk.");
         return;
       }
-      // Mendapatkan token dari localStorage atau sumber lainnya
-      const storedToken = localStorage.getItem("customToken");
-
-      // Membuat header dengan menyertakan token
-      const headers = {
-        Authorization: `Bearer ${storedToken}`,
-      };
+      const headers = getFirebaseIdTokenHeaders();
 
       // Kirim komentar ke endpoint Express dengan ID pengguna yang aktif
       const response = await axios.post(

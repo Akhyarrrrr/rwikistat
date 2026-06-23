@@ -29,32 +29,6 @@ const upload = multer({
   },
 }).single("pdfFile");
 
-// Middleware untuk verifikasi token bearer
-const verifyToken = (req, res, next) => {
-  const bearerHeader = req.headers["authorization"];
-
-  if (typeof bearerHeader !== "undefined") {
-    const bearerToken = bearerHeader.split(" ")[1];
-    req.token = bearerToken;
-
-    // Verifikasi token menggunakan Firebase Admin SDK atau metode autentikasi yang sesuai
-    admin
-      .auth()
-      .verifyIdToken(bearerToken)
-      .then((decodedToken) => {
-        req.user = decodedToken;
-        next(); // Lanjutkan ke middleware atau fungsi berikutnya setelah autentikasi
-      })
-      .catch((error) => {
-        console.error("Token tidak valid:", error);
-        res.status(403).json({ error: "Token tidak valid." });
-      });
-  } else {
-    // Jika tidak ada token
-    res.status(403).json({ error: "Akses ditolak. Token tidak ditemukan." });
-  }
-};
-
 // Rute untuk mengunggah file PDF
 router.post("/", (req, res) => {
   upload(req, res, async (err) => {
@@ -121,9 +95,7 @@ router.post("/", (req, res) => {
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       };
 
-      const modulRef = await firestore.collection("modul").add(modulData);
-
-      console.log("Data modul berhasil ditambahkan dengan ID:", modulRef.id);
+      await firestore.collection("modul").add(modulData);
       res.json({
         message:
           "File PDF berhasil diunggah dan data modul berhasil ditambahkan.",
@@ -166,9 +138,7 @@ router.post("/test", (req, res) => {
         textData: req.body.textData,
       };
 
-      const modulRef = await firestore.collection("modul").add(modulData);
-
-      console.log("Data modul berhasil ditambahkan dengan ID:", modulRef.id);
+      await firestore.collection("modul").add(modulData);
       res.json({
         message: "File berhasil diunggah dan data modul berhasil ditambahkan.",
       });

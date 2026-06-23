@@ -74,13 +74,17 @@ export default function Login() {
 
   // Konfigurasi Google Sign-In saat halaman pertama kali dimuat
   useEffect(() => {
-    GoogleSignin.configure({
-      webClientId:
-        "72157531364-9c72l1rst20td0704jfs20t9km8ois9a.apps.googleusercontent.com",
-      iosClientId:
-        "72157531364-jmiogtei3uqe61eqmtpm4q3v487udhke.apps.googleusercontent.com",
+    const googleSignInConfig = {
+      ...(process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
+        ? { webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }
+        : {}),
+      ...(process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID
+        ? { iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID }
+        : {}),
       offlineAccess: true, // Mengaktifkan offline access token
-    });
+    };
+
+    GoogleSignin.configure(googleSignInConfig);
   }, []);
 
   // Fungsi untuk login menggunakan Google

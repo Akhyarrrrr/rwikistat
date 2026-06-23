@@ -3,6 +3,7 @@ import axios from "axios";
 import { auth } from "../app/firebaseConfig";
 import { BiBookmark, BiSolidBookmark } from "react-icons/bi";
 import config from "@/config.js";
+import { getFirebaseIdTokenHeaders } from "@/lib/authHeaders";
 
 const Bookmark: React.FC<{ itemId: string }> = ({ itemId }) => {
   const [bookmarkButton, setBookmarkButton] = React.useState(false);
@@ -18,27 +19,18 @@ const Bookmark: React.FC<{ itemId: string }> = ({ itemId }) => {
       const user = auth.currentUser;
       const uid = user?.uid; // Get the user ID from the authentication object
 
-      // Mendapatkan token dari localStorage atau sumber lainnya
-      const storedToken = localStorage.getItem("customToken");
-
-      // Membuat header dengan menyertakan token
-      const headers = {
-        Authorization: `Bearer ${storedToken}`,
-      };
-
       if (uid) {
         // Kirim permintaan API untuk mengambil data like
         const response = await axios.get(
           `${config.API_URL}/api/forum/bookmark/${itemId}/is-bookmarked`,
           {
-            headers: headers, // Pass headers in the config object
+            headers: getFirebaseIdTokenHeaders(),
             params: { uid: uid }, // Include email as a query parameter
           }
         );
 
         if (response.status === 200) {
           setBookmarkButton(response.data.isBookmarked);
-          // console.log(response.data.isLiked);
           setIsLoading(false);
         }
       } else {
@@ -56,20 +48,12 @@ const Bookmark: React.FC<{ itemId: string }> = ({ itemId }) => {
       const user = auth.currentUser;
       const uid = user?.uid; // Get the user ID from the authentication object
 
-      // Mendapatkan token dari localStorage atau sumber lainnya
-      const storedToken = localStorage.getItem("customToken");
-
-      // Membuat header dengan menyertakan token
-      const headers = {
-        Authorization: `Bearer ${storedToken}`,
-      };
-
       if (uid) {
         // Kirim permintaan API untuk menyukai postingan
         const response = await axios.post(
           `${config.API_URL}/api/forum/bookmark/${itemId}`,
           { uid: uid },
-          { headers: headers }
+          { headers: getFirebaseIdTokenHeaders() }
         );
 
         if (response.status === 200) {
@@ -90,20 +74,12 @@ const Bookmark: React.FC<{ itemId: string }> = ({ itemId }) => {
       const user = auth.currentUser;
       const uid = user?.uid; // Get the user ID from the authentication object
 
-      // Mendapatkan token dari localStorage atau sumber lainnya
-      const storedToken = localStorage.getItem("customToken");
-
-      // Membuat header dengan menyertakan token
-      const headers = {
-        Authorization: `Bearer ${storedToken}`,
-      };
-
       if (uid) {
         // Kirim permintaan API untuk membatalkan like postingan
         const response = await axios.post(
           `${config.API_URL}/api/forum/unbookmark/${itemId}`,
           { uid: uid },
-          { headers: headers }
+          { headers: getFirebaseIdTokenHeaders() }
         );
 
         if (response.status === 200) {

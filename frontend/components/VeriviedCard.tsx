@@ -13,6 +13,7 @@ import DeleteForever from "@mui/icons-material/DeleteForever";
 import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
 import axios from "axios";
 import config from "@/config.js";
+import { getFirebaseIdTokenHeaders } from "@/lib/authHeaders";
 
 interface VeriviedData {
   profileImage: any;
@@ -37,11 +38,12 @@ const VeriviedCard = ({
   const [openDelete, setOpenDelete] = React.useState<boolean>(false);
 
   const handleVerified = (id: number) => {
-    const storedToken = localStorage.getItem("customToken");
-    const headers = { Authorization: `Bearer ${storedToken}` };
-
     axios
-      .post(`${config.API_URL}/api/user/${id}`, {}, { headers })
+      .post(
+        `${config.API_URL}/api/user/${id}`,
+        {},
+        { headers: getFirebaseIdTokenHeaders() }
+      )
       .then(() => {
         setOpenVerify(false);
       })
@@ -51,11 +53,10 @@ const VeriviedCard = ({
   };
 
   const handleDelete = (id: number) => {
-    const storedToken = localStorage.getItem("customToken");
-    const headers = { Authorization: `Bearer ${storedToken}` };
-
     axios
-      .delete(`${config.API_URL}/api/user/${id}`, { headers })
+      .delete(`${config.API_URL}/api/user/${id}`, {
+        headers: getFirebaseIdTokenHeaders(),
+      })
       .then(() => {
         setOpenDelete(false);
         onDelete(id);

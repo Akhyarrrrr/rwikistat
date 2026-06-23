@@ -10,6 +10,7 @@ import MarkdownPreview from "@uiw/react-markdown-preview";
 import config from "@/config.js";
 import { Button } from "@nextui-org/react";
 import { classnames } from "@/components/compiler/utils/general";
+import { getFirebaseIdTokenHeaders } from "@/lib/authHeaders";
 
 interface ModulData {
   id: number;
@@ -62,15 +63,10 @@ export default function DetailPage() {
 
   useEffect(() => {
     if (modulId) {
-      // Mendapatkan token dari localStorage atau sumber lainnya
-      const storedToken = localStorage.getItem("customToken");
-
-      // Membuat header dengan menyertakan token
-      const headers = {
-        Authorization: `Bearer ${storedToken}`,
-      };
       // Lakukan permintaan ke API untuk mendapatkan data detail modul berdasarkan ID
-      fetch(`${config.API_URL}/api/modul/${modulId}`, { headers })
+      fetch(`${config.API_URL}/api/modul/${modulId}`, {
+        headers: getFirebaseIdTokenHeaders(),
+      })
         .then((response) => {
           if (!response.ok) {
             throw new Error("Gagal mengambil data detail modul.");
@@ -98,19 +94,11 @@ export default function DetailPage() {
 
   const fetchData = async () => {
     try {
-      // Mendapatkan token dari localStorage atau sumber lainnya
-      const storedToken = localStorage.getItem("customToken");
-
-      // Membuat header dengan menyertakan token
-      const headers = {
-        Authorization: `Bearer ${storedToken}`,
-      };
       const response = await axios.get(`${config.API_URL}/api/modul`, {
-        headers,
+        headers: getFirebaseIdTokenHeaders(),
       });
       if (response.status === 200) {
         setTestData(response.data);
-        // console.log(response.data);
       } else {
         console.error("Gagal mengambil data:", response.statusText);
       }
@@ -152,14 +140,13 @@ export default function DetailPage() {
   const handleRunGraph = async () => {
     try {
       setLoading(true);
-      const storedToken = localStorage.getItem("customToken");
       const response = await fetch(
         `${config.API_URL}/api/compiler/newshiny-web`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${storedToken}`,
+            ...getFirebaseIdTokenHeaders(),
           },
           body: JSON.stringify({
             code,
@@ -168,7 +155,6 @@ export default function DetailPage() {
       );
 
       const responseData = await response.text();
-      console.log(responseData);
       if (response.ok) {
         try {
           const data = JSON.parse(responseData);

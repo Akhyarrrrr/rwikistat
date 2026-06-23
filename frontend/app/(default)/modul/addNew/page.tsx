@@ -4,6 +4,7 @@ import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import MarkdownPreview from "@uiw/react-markdown-preview";
 import Editor from "@monaco-editor/react";
 import config from "@/config.js";
+import { getFirebaseIdTokenHeaders } from "@/lib/authHeaders";
 
 export default function Page() {
   useEffect(() => {
@@ -44,18 +45,11 @@ export default function Page() {
     formData.append("textMarkdown", textMarkdown);
 
     try {
-      // Mendapatkan token dari localStorage atau sumber lainnya
-      const storedToken = localStorage.getItem("customToken");
-
-      // Membuat header dengan menyertakan token
-      const headers = {
-        Authorization: `Bearer ${storedToken}`,
-      };
       // Menggunakan fetch untuk mengirim data ke endpoint
       const response = await fetch(`${config.API_URL}/api/modul`, {
         method: "POST",
         body: formData,
-        headers,
+        headers: getFirebaseIdTokenHeaders(),
       });
 
       if (response.ok) {
