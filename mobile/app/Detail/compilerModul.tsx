@@ -28,7 +28,6 @@ const CompilerModul = () => {
   const [lines, setLines] = useState([""]);
   const [output, setOutput] = useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [isCopyModalVisible, setIsCopyModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [outputType, setOutputType] = useState<string>("graph"); // Default "graph"
@@ -130,7 +129,7 @@ const CompilerModul = () => {
             setOutput(`Error: ${data.error || "Failed to start Shiny app"}`);
             setIsModalVisible(true);
           }
-        } catch (parseError) {
+        } catch {
           setOutput("Error: Failed to parse JSON response.");
           setIsModalVisible(true);
         }
@@ -177,10 +176,6 @@ const CompilerModul = () => {
         .join("\n");
 
       await Clipboard.setStringAsync(cleanedOutput);
-      setIsCopyModalVisible(true);
-      setTimeout(() => {
-        setIsCopyModalVisible(false);
-      }, 2000);
     } catch (error) {
       console.error("Error copying to clipboard:", error);
       Alert.alert("Error", "Failed to copy output to clipboard");

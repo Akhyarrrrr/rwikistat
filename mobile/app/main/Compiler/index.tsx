@@ -201,7 +201,7 @@ const Compiler = () => {
       keyboardDidShowListener.remove();
       keyboardDidHideListener.remove();
     };
-  }, []);
+  }, [setIsInputFocused]);
 
   return (
     <>
