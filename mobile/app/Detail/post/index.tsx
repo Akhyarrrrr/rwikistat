@@ -208,9 +208,9 @@ const MyPost: React.FC = () => {
       setUser(userData);
     };
     fetchUser();
-  }, []);
+  }, [getUser]);
 
-  const fetchForumData = async () => {
+  const fetchForumData = useCallback(async () => {
     const accessToken = await getAccessToken();
     try {
       const response = await fetch(
@@ -238,7 +238,7 @@ const MyPost: React.FC = () => {
         photo: item.user.photoURL,
         bookmarkCount: item.data.bookmarks?.length || 0,
         bookmark: item.data.bookmarks || [],
-        userId: user?.uid,
+        userId: item.data.uid,
       }));
 
       setPosts(mappedPosts);
@@ -249,19 +249,19 @@ const MyPost: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [getAccessToken, user.uid]);
 
   useEffect(() => {
     setLoading(true);
     if (user.uid) {
       fetchForumData();
     }
-  }, [user]);
+  }, [fetchForumData, user]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchForumData();
-  }, [user.uid]);
+  }, [fetchForumData]);
 
   const onConfirmDelete = (postId: string) => {
     setSelectedPostId(postId);
