@@ -330,7 +330,7 @@ const runShiny = async (req, res) => {
     const port = await detect();
 
     const terminalCommand = "bash";
-    const terminalArgs = ["./run_shiny.sh", path.resolve(filePath), port];
+    const terminalArgs = [path.join(__dirname, "run_shiny.sh"), filePath, port];
 
     const shinyProcess = spawn(terminalCommand, terminalArgs, {
       stdio: "ignore",
