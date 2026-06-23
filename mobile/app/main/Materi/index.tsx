@@ -17,7 +17,6 @@ import { FontAwesome } from "@expo/vector-icons";
 import config from "@/config";
 
 const logo = require("../../../assets/images/icon.png");
-const notfound = require("../../../assets/images/notfound.png");
 
 const Home = () => {
   const router = useRouter();
@@ -28,7 +27,7 @@ const Home = () => {
   const [refreshing, setRefreshing] = useState(false);
   const scheme = useColorScheme();
 
-  const fetchMateri = async () => {
+  const fetchMateri = useCallback(async () => {
     const accessToken = await getAccessToken();
     try {
       const response = await fetch(`${config.API_URL}/api/modul`, {
@@ -50,11 +49,11 @@ const Home = () => {
     } catch (error: any) {
       console.error("Error modul:", error.message);
     }
-  };
+  }, [getAccessToken]);
 
   useEffect(() => {
     fetchMateri();
-  }, []);
+  }, [fetchMateri]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -63,7 +62,7 @@ const Home = () => {
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [fetchMateri]);
 
   useEffect(() => {
     const filtered = modules.filter(

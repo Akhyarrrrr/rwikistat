@@ -1,5 +1,5 @@
 import { useLocalSearchParams, Stack } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   SafeAreaView,
   View,
@@ -26,8 +26,8 @@ import Markdown from "react-native-markdown-display";
 import { useAuth } from "@/context/authContext";
 import { useRouter } from "expo-router";
 import config from "@/config";
+import * as Clipboard from "expo-clipboard";
 
-const logo = require("../../../assets/images/icon.png");
 const notfound = require("../../../assets/images/notfound.png");
 
 const Module = () => {
@@ -41,7 +41,9 @@ const Module = () => {
   const router = useRouter();
   const scheme = useColorScheme();
 
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = async (text: string) => {
+    await Clipboard.setStringAsync(text);
+
     if (Platform.OS === "android") {
       ToastAndroid.show("Teks berhasil disalin!", ToastAndroid.SHORT);
     } else {
@@ -49,32 +51,30 @@ const Module = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchModule = async () => {
-      const accessToken = await getAccessToken();
-      try {
-        const response = await fetch(
-          `${config.API_URL}/api/modul/${moduleId}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        );
-        const data = await response.json();
-        setModules(data);
-        setRawText(data.data.textData);
-        setFilteredText(data.data.textData);
-        if (data) {
-          setLoading(false);
-        }
-      } catch (error: any) {
-        console.error("Error modul:", error.message);
+  const fetchModule = useCallback(async () => {
+    const accessToken = await getAccessToken();
+    try {
+      const response = await fetch(`${config.API_URL}/api/modul/${moduleId}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      const data = await response.json();
+      setModules(data);
+      setRawText(data.data.textData);
+      setFilteredText(data.data.textData);
+      if (data) {
+        setLoading(false);
       }
-    };
+    } catch (error: any) {
+      console.error("Error modul:", error.message);
+    }
+  }, [getAccessToken, moduleId]);
+
+  useEffect(() => {
     fetchModule();
-  }, []);
+  }, [fetchModule]);
 
   useEffect(() => {
     if (searchQuery.trim() === "") {
