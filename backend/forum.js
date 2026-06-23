@@ -33,16 +33,13 @@ const verifyToken = (req, res, next) => {
 
 // Fungsi untuk menambah skor ke koleksi users
 async function addScoreToUser(uid, scoreToAdd) {
+  if (!uid) return;
+
   const userDocRef = firestore.collection("users").doc(uid);
-
-  // Ambil data pengguna dari Firestore
   const userDoc = await userDocRef.get();
-  const userData = userDoc.data();
+  const currentScore = Number(userDoc.data()?.score || 0);
 
-  // Update skor pengguna di Firestore
-  await userDocRef.update({
-    score: userData.score + scoreToAdd,
-  });
+  await userDocRef.set({ score: currentScore + scoreToAdd }, { merge: true });
 }
 
 // Rute untuk membuat topik baru
@@ -103,7 +100,6 @@ router.post("/", upload.array("images", 3), async (req, res) => {
     const scoreToAdd = 5; // Atur sesuai aturan skor yang Anda tentukan
     await addScoreToUser(uid, scoreToAdd);
 
-    console.log("Data berhasil ditambahkan dengan ID:", documentId);
     res.json({ message: "Data berhasil ditambahkan." });
   } catch (error) {
     console.error("Gagal menambahkan data:", error);
@@ -327,7 +323,6 @@ router.post("/:topicId/comments", async (req, res) => {
     const scoreToAdd = 10; // Atur sesuai aturan skor yang Anda tentukan
     await addScoreToUser(uid, scoreToAdd);
 
-    console.log("Komentar berhasil ditambahkan.");
     res.json({ message: "Komentar berhasil ditambahkan." });
   } catch (error) {
     console.error("Gagal menambahkan komentar:", error);

@@ -43,12 +43,18 @@ router.post("/chat", async (req, res) => {
 
   const assistantIdToUse = process.env.AI_ASSISTANT_ID;
   const userId = req.body.userId; // You should include the user ID in the request
+  const userMessage = req.body.userMessage;
+
+  if (!userId || !userMessage) {
+    return res
+      .status(400)
+      .json({ error: "userId dan userMessage wajib diisi." });
+  }
 
   // Create a new thread if it's the user's first message
   if (!threadByUser[userId]) {
     try {
       const myThread = await openai.beta.threads.create();
-      console.log("New thread created with ID: ", myThread.id, "\n");
       threadByUser[userId] = myThread.id; // Store the thread ID for this user
     } catch (error) {
       console.error("Error creating thread:", error);
@@ -57,18 +63,15 @@ router.post("/chat", async (req, res) => {
     }
   }
 
-  const userMessage = req.body.userMessage;
-
   // Add a Message to the Thread
   try {
-    const myThreadMessage = await openai.beta.threads.messages.create(
+    await openai.beta.threads.messages.create(
       threadByUser[userId], // Use the stored thread ID for this user
       {
         role: "user",
         content: userMessage,
       }
     );
-    console.log("This is the message object: ", myThreadMessage, "\n");
 
     // Run the Assistant
     const myRun = await openai.beta.threads.runs.create(
@@ -83,27 +86,23 @@ router.post("/chat", async (req, res) => {
         ],
       }
     );
-    console.log("This is the run object: ", myRun, "\n");
 
     // Periodically retrieve the Run to check on its status
     const retrieveRun = async () => {
-      let keepRetrievingRun;
+      let run = myRun;
 
-      while (myRun.status !== "completed") {
-        keepRetrievingRun = await openai.beta.threads.runs.retrieve(
+      while (["queued", "in_progress"].includes(run.status)) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        run = await openai.beta.threads.runs.retrieve(
           threadByUser[userId], // Use the stored thread ID for this user
           myRun.id
         );
+      }
 
-        console.log(`Run status: ${keepRetrievingRun.status}`);
-
-        if (keepRetrievingRun.status === "completed") {
-          console.log("\n");
-          break;
-        }
+      if (run.status !== "completed") {
+        throw new Error(`Assistant run ended with status: ${run.status}`);
       }
     };
-    retrieveRun();
 
     // Retrieve the Messages added by the Assistant to the Thread
     const waitForAssistantMessage = async () => {
@@ -117,13 +116,6 @@ router.post("/chat", async (req, res) => {
       res.status(200).json({
         response: allMessages.data[0].content[0].text.value,
       });
-      console.log(
-        "------------------------------------------------------------ \n"
-      );
-
-      console.log("User: ", myThreadMessage.content[0].text.value);
-      console.log("Assistant: ", allMessages.data[0].content[0].text.value);
-
       const chatRef = firestore.collection("chats").doc();
 
       // Membuat objek data untuk disimpan ke Firestore
@@ -137,7 +129,7 @@ router.post("/chat", async (req, res) => {
       // Menyimpan data ke Firestore
       await chatRef.set(chatData);
     };
-    waitForAssistantMessage();
+    await waitForAssistantMessage();
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Internal server error" });
