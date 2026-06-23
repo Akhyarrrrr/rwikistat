@@ -56,7 +56,7 @@ const Chatbot: React.FC = () => {
       keyboardDidShowListener.remove();
       keyboardDidHideListener.remove();
     };
-  }, []);
+  }, [setIsInputFocused]);
 
   useEffect(() => {
     scrollViewRef.current?.scrollToEnd({ animated: true });
