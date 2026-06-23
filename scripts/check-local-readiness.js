@@ -93,7 +93,6 @@ requireKeys(
     "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET",
     "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",
     "EXPO_PUBLIC_FIREBASE_APP_ID",
-    "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID",
   ],
   errors
 );
@@ -104,6 +103,10 @@ if (!backendEnv?.AI_API_KEY || !backendEnv?.AI_ASSISTANT_ID) {
 
 if (!mobileEnv?.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID) {
   warnings.push("mobile: iOS Google Sign-In needs EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID before iOS login testing");
+}
+
+if (!mobileEnv?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID) {
+  warnings.push("mobile: Google Sign-In needs EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID before Google login testing");
 }
 
 const appJson = readJson("mobile/app.json");
