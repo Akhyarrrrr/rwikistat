@@ -1,6 +1,6 @@
 const express = require("express");
 const { admin, storage, firestore } = require("./adminConfig");
-const { spawn, ChildProcess, exec } = require("child_process");
+const { spawn } = require("child_process");
 const fs = require("fs");
 const { PNG } = require("pngjs");
 const router = express.Router();
@@ -264,115 +264,7 @@ router.post("/check-ports", async (req, res) => {
   }
 });
 
-// Endpoint di local
-// router.post("/newshiny", async (req, res) => {
-//   try {
-//     const code = req.body.code;
-//     const random = Math.random().toString(36).substring(7);
-//     const fileName = `${random}.R`;
-//     const tempDir = path.join(__dirname, "temp");
-
-//     if (!fs.existsSync(tempDir)) {
-//       fs.mkdirSync(tempDir);
-//     }
-
-//     fs.writeFileSync(path.join(tempDir, fileName), code);
-
-//     const port = await detect();
-//     const url = `http://127.0.0.1:${port}`;
-
-//     const command = `Rscript -e "shiny::runApp('./temp/${fileName}', host='127.0.0.1', port=${port})"`;
-
-//     exec(command, (error, stdout) => {
-//       if (error) {
-//         console.error(`Error executing R script: ${error}`);
-//         return res
-//           .status(500)
-//           .json({ success: false, error: "Error executing script" });
-//       }
-//       console.log(`R Script Output: ${stdout}`);
-//     });
-
-//     const waitOptions = {
-//       resources: [url],
-//       delay: 2000,
-//       interval: 100,
-//       timeout: 20000,
-//     };
-//     await waitOn(waitOptions);
-//     console.log(`${url} is now available`);
-//     res.json({ success: true, link: url });
-
-//     setTimeout(() => {
-//       const filePath = path.join(__dirname, "temp", fileName);
-//       if (fs.existsSync(filePath)) {
-//         fs.unlinkSync(filePath);
-//         console.log(`File ${fileName} deleted from temp folder after delay.`);
-//       } else {
-//         console.error("File not found");
-//       }
-//     }, 30000); // delay 30 detik
-//   } catch (err) {
-//     console.error("Error in /newshiny:", err);
-//     res.status(500).json({ success: false, error: "Server Error" });
-//   }
-// });
-
-// Endpoint di server mobile
-router.post("/newshiny", async (req, res) => {
-  try {
-    const code = req.body.code;
-    const random = Math.random().toString(36).substring(7);
-    const filePath = `./temp/${random}.R`;
-
-    if (!fs.existsSync("./temp")) {
-      fs.mkdirSync("./temp");
-    }
-
-    fs.writeFileSync(filePath, code);
-    // console.log(
-    //   `File contents for ${filePath}:`,
-    //   fs.readFileSync(filePath, "utf8")
-    // );
-
-    const port = await detect();
-
-    const terminalCommand = "bash";
-    const terminalArgs = ["./run_shiny.sh", path.resolve(filePath), port];
-
-    const shinyProcess = spawn(terminalCommand, terminalArgs, {
-      stdio: "ignore",
-      detached: true,
-    });
-    shinyProcess.unref();
-
-    const url = `${process.env.PUBLIC_HOST || "http://localhost"}:${port}`;
-    const waitOptions = {
-      resources: [url],
-      delay: 2000,
-      interval: 100,
-      timeout: 20000,
-    };
-
-    // console.log(`${url} is now available`);
-    await waitOn(waitOptions);
-    res.json({ success: true, link: url });
-    setTimeout(() => {
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-        // console.log(`File ${random}.R deleted from temp folder after delay.`);
-      } else {
-        console.error("File not found");
-      }
-    }, 30000); // delay 30 detik
-  } catch (err) {
-    console.error("Error in /newshiny:", err);
-    res.status(500).json({ error: "Server Error" });
-  }
-});
-
-// Endpoint di server web
-router.post("/newshiny-web", async (req, res) => {
+const runShiny = async (req, res) => {
   let filePath;
   try {
     const { code } = req.body;
@@ -430,6 +322,9 @@ router.post("/newshiny-web", async (req, res) => {
 
     res.status(500).json({ success: false, error: "Server Error" });
   }
-});
+};
+
+router.post("/newshiny", runShiny);
+router.post("/newshiny-web", runShiny);
 
 module.exports = router;
