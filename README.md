@@ -15,12 +15,20 @@ Monorepo untuk RWikiStat: backend API, web app, dan mobile app.
 
 ```bash
 cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env.local
+cp frontend/.env.example frontend/.env
 cp mobile/.env.example mobile/.env
 ```
 
 3. Isi credential Firebase baru di masing-masing env.
-4. Jalankan backend:
+4. Cek kesiapan env/Firebase lokal:
+
+```bash
+node scripts/check-local-readiness.js
+```
+
+Checker ini tidak menampilkan nilai secret. Jika gagal, lengkapi field yang dilaporkan dulu.
+
+5. Jalankan backend:
 
 ```bash
 cd backend
@@ -28,13 +36,13 @@ npm install
 npm start
 ```
 
-5. Cek backend:
+6. Cek backend:
 
 ```bash
 curl http://localhost:8080/health
 ```
 
-6. Jalankan web:
+7. Jalankan web:
 
 ```bash
 cd frontend
@@ -42,9 +50,9 @@ npm install
 npm run dev
 ```
 
-`npm run build` di frontend juga membutuhkan nilai `NEXT_PUBLIC_FIREBASE_*` di `frontend/.env.local`.
+`npm run build` di frontend juga membutuhkan nilai `NEXT_PUBLIC_FIREBASE_*` di `frontend/.env`.
 
-7. Jalankan mobile:
+8. Jalankan mobile:
 
 ```bash
 cd mobile
