@@ -7,6 +7,15 @@ const router = express.Router();
 const detect = require("detect-port");
 const waitOn = require("wait-on");
 const path = require("path");
+const tempDir = path.join(__dirname, "temp");
+
+const writeTempRFile = (code) => {
+  fs.mkdirSync(tempDir, { recursive: true });
+  const random = Math.random().toString(36).substring(7);
+  const filePath = path.join(tempDir, `${random}.R`);
+  fs.writeFileSync(filePath, code);
+  return filePath;
+};
 
 // Middleware untuk verifikasi token bearer
 const verifyToken = (req, res, next) => {
@@ -36,11 +45,7 @@ const verifyToken = (req, res, next) => {
 
 router.post("/", (req, res) => {
   const code = req.body.code;
-
-  const random = Math.random().toString(36).substring(7);
-  const filePath = `./temp/${random}.R`;
-
-  fs.writeFileSync(filePath, code);
+  const filePath = writeTempRFile(code);
 
   const process = spawn("Rscript", [filePath]);
 
@@ -65,11 +70,7 @@ router.post("/", (req, res) => {
 
 router.post("/test/", (req, res) => {
   const code = req.body.code;
-
-  const random = Math.random().toString(36).substring(7);
-  const filePath = `./temp/${random}.R`;
-
-  fs.writeFileSync(filePath, code);
+  const filePath = writeTempRFile(code);
 
   const process = spawn("Rscript", [filePath]);
 
@@ -111,11 +112,7 @@ router.post("/test/", (req, res) => {
 
 router.post("/modul", (req, res) => {
   const code = req.body.code;
-
-  const random = Math.random().toString(36).substring(7);
-  const filePath = `./temp/${random}.R`;
-
-  fs.writeFileSync(filePath, code);
+  const filePath = writeTempRFile(code);
 
   // Run the Shiny app with IPC (Inter-Process Communication)
   const process = spawn("Rscript", ["--vanilla", "--slave", filePath], {
@@ -156,11 +153,7 @@ router.post("/modul", (req, res) => {
 router.post("/shiny", (req, res) => {
   const code = req.body.code;
   const port = req.body.port;
-
-  const random = Math.random().toString(36).substring(7);
-  const filePath = `./temp/${random}.R`;
-
-  fs.writeFileSync(filePath, code);
+  const filePath = writeTempRFile(code);
 
   const process = spawn("Rscript", [filePath]);
 
@@ -274,14 +267,7 @@ const runShiny = async (req, res) => {
         .json({ success: false, error: "Code is required" });
     }
 
-    const random = Math.random().toString(36).substring(7);
-    filePath = `./temp/${random}.R`;
-
-    if (!fs.existsSync("./temp")) {
-      fs.mkdirSync("./temp");
-    }
-
-    fs.writeFileSync(filePath, code);
+    filePath = writeTempRFile(code);
     // console.log(`File created: ${filePath}`);
 
     const port = await detect();
@@ -309,7 +295,6 @@ const runShiny = async (req, res) => {
     setTimeout(() => {
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
-        // console.log(`File ${random}.R deleted from temp folder.`);
       }
     }, 120000);
   } catch (err) {
