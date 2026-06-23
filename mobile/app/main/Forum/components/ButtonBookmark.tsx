@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, ActivityIndicator, ToastAndroid, Platform } from "react-native";
 import { useAuth } from "@/context/authContext";
 import { MaterialIcons } from "@expo/vector-icons";
+import config from "@/config";
 
 const ButtonBookmark: React.FC<{ itemId: string }> = ({ itemId }) => {
   const [buttonBookmark, setBookmarkButton] = useState(false);
@@ -19,7 +20,7 @@ const ButtonBookmark: React.FC<{ itemId: string }> = ({ itemId }) => {
       if (userId) {
         const accessToken = await getAccessToken();
         fetch(
-          `${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/forum/bookmark/${itemId}/is-bookmarked?uid=${userId}`,
+          `${config.API_URL}/api/forum/bookmark/${itemId}/is-bookmarked?uid=${userId}`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -57,7 +58,7 @@ const ButtonBookmark: React.FC<{ itemId: string }> = ({ itemId }) => {
         const requestBody = {
           uid: userId,
         };
-        fetch(`${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/forum/bookmark/${itemId}`, {
+        fetch(`${config.API_URL}/api/forum/bookmark/${itemId}`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -90,7 +91,7 @@ const ButtonBookmark: React.FC<{ itemId: string }> = ({ itemId }) => {
         const requestBody = {
           uid: userId,
         };
-        fetch(`${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/forum/unbookmark/${itemId}`, {
+        fetch(`${config.API_URL}/api/forum/unbookmark/${itemId}`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${accessToken}`,

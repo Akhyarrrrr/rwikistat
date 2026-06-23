@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, ActivityIndicator, ToastAndroid, Platform } from "react-native";
 import { useAuth } from "@/context/authContext";
 import { FontAwesome } from "@expo/vector-icons";
+import config from "@/config";
 
 const ButtonLike: React.FC<{ itemId: string }> = ({ itemId }) => {
   const [buttonLike, setLikedButton] = useState(false);
@@ -19,7 +20,7 @@ const ButtonLike: React.FC<{ itemId: string }> = ({ itemId }) => {
       if (userId) {
         const accessToken = await getAccessToken();
         fetch(
-          `${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/forum/like/${itemId}/is-liked?uid=${userId}`,
+          `${config.API_URL}/api/forum/like/${itemId}/is-liked?uid=${userId}`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -51,7 +52,7 @@ const ButtonLike: React.FC<{ itemId: string }> = ({ itemId }) => {
         const requestBody = {
           uid: userId,
         };
-        fetch(`${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/forum/like/${itemId}`, {
+        fetch(`${config.API_URL}/api/forum/like/${itemId}`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -84,7 +85,7 @@ const ButtonLike: React.FC<{ itemId: string }> = ({ itemId }) => {
         const requestBody = {
           uid: userId,
         };
-        fetch(`${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/forum/unlike/${itemId}`, {
+        fetch(`${config.API_URL}/api/forum/unlike/${itemId}`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${accessToken}`,

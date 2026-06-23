@@ -20,6 +20,7 @@ import * as Clipboard from "expo-clipboard";
 import { useTabVisibility } from "../_layout";
 import Modal from "react-native-modal";
 import { useAuth } from "@/context/authContext";
+import config from "@/config";
 
 const Chatbot: React.FC = () => {
   const [message, setMessage] = useState("");
@@ -67,7 +68,7 @@ const Chatbot: React.FC = () => {
       const token = await getAccessToken();
       const user = await getUser();
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/chatbot/chat`,
+        `${config.API_URL}/api/chatbot/chat`,
         {
           method: "POST",
           headers: {

@@ -13,6 +13,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { router, Stack } from "expo-router";
 import { useAuth } from "@/context/authContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import config from "@/config";
 
 const profilePicture = require("../../../assets/images/icon.png");
 
@@ -40,7 +41,7 @@ const Profile = () => {
       }
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/user/${userData.uid}`,
+        `${config.API_URL}/api/user/${userData.uid}`,
         {
           method: "GET",
           headers: {

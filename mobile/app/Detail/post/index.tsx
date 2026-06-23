@@ -22,6 +22,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/id";
 import ButtonLike from "../../main/Forum/components/ButtonLike";
 import ButtonBookmark from "../../main/Forum/components/ButtonBookmark";
+import config from "@/config";
 
 dayjs.extend(relativeTime);
 dayjs.locale("id");
@@ -213,7 +214,7 @@ const MyPost: React.FC = () => {
     const accessToken = await getAccessToken();
     try {
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/forum/posted/${user.uid}`,
+        `${config.API_URL}/api/forum/posted/${user.uid}`,
         {
           method: "GET",
           headers: {
@@ -271,7 +272,7 @@ const MyPost: React.FC = () => {
     const accessToken = await getAccessToken();
     try {
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/forum/${selectedPostId}`,
+        `${config.API_URL}/api/forum/${selectedPostId}`,
         {
           method: "DELETE",
           headers: {

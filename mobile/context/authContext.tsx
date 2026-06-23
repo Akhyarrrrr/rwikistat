@@ -4,6 +4,7 @@ import { useNavigation, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { auth } from "../firebase";
+import config from "@/config";
 
 // Tipe data untuk user
 // Berisi informasi pengguna seperti uid, nama, npm, dan foto profil
@@ -134,7 +135,7 @@ export const AuthProvider = ({ children }: any) => {
   const sendUserDataToServer = async (userData: any) => {
     try {
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/google-login`,
+        `${config.API_URL}/google-login`,
         {
           method: "POST",
           headers: {
@@ -157,7 +158,7 @@ export const AuthProvider = ({ children }: any) => {
   const handleLoginSuccess = async (email: string, password: string) => {
     try {
       const requestBody = { email, password };
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/login`, {
+      const response = await fetch(`${config.API_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),

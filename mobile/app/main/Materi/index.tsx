@@ -14,6 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
 import { useAuth } from "@/context/authContext";
 import { FontAwesome } from "@expo/vector-icons";
+import config from "@/config";
 
 const logo = require("../../../assets/images/icon.png");
 const notfound = require("../../../assets/images/notfound.png");
@@ -30,7 +31,7 @@ const Home = () => {
   const fetchMateri = async () => {
     const accessToken = await getAccessToken();
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/modul`, {
+      const response = await fetch(`${config.API_URL}/api/modul`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${accessToken}`,

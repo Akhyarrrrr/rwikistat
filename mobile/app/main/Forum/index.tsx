@@ -28,6 +28,7 @@ import ButtonBookmark from "./components/ButtonBookmark";
 import Feather from "@expo/vector-icons/Feather";
 import { useTabVisibility } from "../_layout";
 import * as Clipboard from "expo-clipboard";
+import config from "@/config";
 
 dayjs.extend(relativeTime);
 dayjs.locale("id");
@@ -90,7 +91,7 @@ const Forum: React.FC = () => {
     const accessToken = await getAccessToken();
     try {
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/forum/`,
+        `${config.API_URL}/api/forum/`,
         {
           method: "GET",
           headers: {

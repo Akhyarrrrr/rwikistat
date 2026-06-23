@@ -25,6 +25,7 @@ import {
 import Markdown from "react-native-markdown-display";
 import { useAuth } from "@/context/authContext";
 import { useRouter } from "expo-router";
+import config from "@/config";
 
 const logo = require("../../../assets/images/icon.png");
 const notfound = require("../../../assets/images/notfound.png");
@@ -53,7 +54,7 @@ const Module = () => {
       const accessToken = await getAccessToken();
       try {
         const response = await fetch(
-          `${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/modul/${moduleId}`,
+          `${config.API_URL}/api/modul/${moduleId}`,
           {
             method: "GET",
             headers: {

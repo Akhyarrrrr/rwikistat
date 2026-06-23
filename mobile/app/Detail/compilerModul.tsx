@@ -21,6 +21,7 @@ import { Stack, useLocalSearchParams } from "expo-router";
 import { useAuth } from "@/context/authContext";
 import { WebView } from "react-native-webview";
 import { Dropdown } from "react-native-element-dropdown";
+import config from "@/config";
 
 const CompilerModul = () => {
   const [code, setCode] = useState("");
@@ -36,7 +37,6 @@ const CompilerModul = () => {
   const [shinyUrl, setShinyUrl] = useState("");
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
-  const [tempFileName, setTempFileName] = useState<string | null>(null);
   const scheme = useColorScheme();
 
   const outputOptions = [
@@ -64,7 +64,7 @@ const CompilerModul = () => {
       setLoading(true);
       const accessToken = await getAccessToken();
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/compiler/`,
+        `${config.API_URL}/api/compiler/`,
         {
           method: "POST",
           headers: {
@@ -101,7 +101,7 @@ const CompilerModul = () => {
       setLoading(true);
       const accessToken = await getAccessToken();
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/compiler/newshiny`,
+        `${config.API_URL}/api/compiler/newshiny-web`,
         {
           method: "POST",
           headers: {
@@ -122,7 +122,6 @@ const CompilerModul = () => {
             if (data.link) {
               setShinyUrl(data.link);
               setIsModalVisible(true);
-              setTempFileName(data.fileName);
             } else {
               setOutput("Error: Shiny URL not found in server response.");
               setIsModalVisible(true);

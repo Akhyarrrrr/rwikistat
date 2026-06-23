@@ -24,6 +24,7 @@ import "dayjs/locale/id";
 import { useAuth } from "@/context/authContext";
 import ButtonLike from "../main/Forum/components/ButtonLike";
 import ButtonBookmark from "../main/Forum/components/ButtonBookmark";
+import config from "@/config";
 
 dayjs.extend(relativeTime);
 dayjs.locale("id");
@@ -106,7 +107,7 @@ export default function DetailForum() {
     const accessToken = await getAccessToken();
     try {
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/forum/${id}/comments`,
+        `${config.API_URL}/api/forum/${id}/comments`,
         {
           method: "GET",
           headers: {
@@ -152,7 +153,7 @@ export default function DetailForum() {
         uid: user?.uid,
       };
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/forum/${id}/comments`,
+        `${config.API_URL}/api/forum/${id}/comments`,
         {
           method: "POST",
           headers: {

@@ -22,6 +22,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/id";
 import ButtonLike from "../../main/Forum/components/ButtonLike";
 import ButtonBookmark from "../../main/Forum/components/ButtonBookmark";
+import config from "@/config";
 
 dayjs.extend(relativeTime);
 dayjs.locale("id");
@@ -197,7 +198,7 @@ const MyBookmark: React.FC = () => {
     const accessToken = await getAccessToken();
     try {
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/forum/bookmarks/${user?.uid}`,
+        `${config.API_URL}/api/forum/bookmarks/${user?.uid}`,
         {
           method: "GET",
           headers: {

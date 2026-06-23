@@ -17,11 +17,12 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack } from "expo-router";
 import { useAuth } from "@/context/authContext";
 import { WebView } from "react-native-webview";
 import { useTabVisibility } from "../_layout";
 import { Dropdown } from "react-native-element-dropdown";
+import config from "@/config";
 
 const Compiler = () => {
   const [code, setCode] = useState("");
@@ -34,10 +35,8 @@ const Compiler = () => {
   const [outputType, setOutputType] = useState<string | null>(null);
   const { getAccessToken } = useAuth();
   const [shinyUrl, setShinyUrl] = useState("");
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const { setIsInputFocused } = useTabVisibility();
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
-  const [tempFileName, setTempFileName] = useState<string | null>(null);
   const scheme = useColorScheme();
   const [isDropdownAlertVisible, setIsDropdownAlertVisible] = useState(false);
 
@@ -51,7 +50,7 @@ const Compiler = () => {
       setLoading(true);
       const accessToken = await getAccessToken();
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/compiler/`,
+        `${config.API_URL}/api/compiler/`,
         {
           method: "POST",
           headers: {
@@ -88,7 +87,7 @@ const Compiler = () => {
       setLoading(true);
       const accessToken = await getAccessToken();
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/compiler/newshiny`,
+        `${config.API_URL}/api/compiler/newshiny-web`,
         {
           method: "POST",
           headers: {
@@ -109,7 +108,6 @@ const Compiler = () => {
             if (data.link) {
               setShinyUrl(data.link);
               setIsModalVisible(true);
-              setTempFileName(data.fileName);
             } else {
               setOutput("Error: Shiny URL not found in server response.");
               setIsModalVisible(true);
@@ -118,7 +116,7 @@ const Compiler = () => {
             setOutput(`Error: ${data.error || "Failed to start Shiny app"}`);
             setIsModalVisible(true);
           }
-        } catch (parseError) {
+        } catch {
           setOutput("Error: Failed to parse JSON response.");
           setIsModalVisible(true);
         }
@@ -298,10 +296,10 @@ const Compiler = () => {
                   onPress={() => {
                     if (!outputType) {
                       showDropdownAlert();
+                    } else if (outputType === "graph") {
+                      handleRunGraph();
                     } else {
-                      outputType === "graph"
-                        ? handleRunGraph()
-                        : handleRunString();
+                      handleRunString();
                     }
                   }}
                   disabled={loading || !code.trim()}

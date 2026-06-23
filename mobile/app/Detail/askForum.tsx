@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/context/authContext";
 import ImageResizer from "react-native-image-resizer";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import config from "@/config";
 
 interface ImagePickerResult {
   canceled: boolean;
@@ -142,7 +143,7 @@ const AskForum = () => {
       });
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080"}/api/forum/`,
+        `${config.API_URL}/api/forum/`,
         {
           method: "POST",
           headers: {
