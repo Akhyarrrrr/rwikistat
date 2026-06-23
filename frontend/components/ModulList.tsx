@@ -13,9 +13,8 @@ import Modal from "@mui/joy/Modal";
 import ModalDialog from "@mui/joy/ModalDialog";
 import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
 import IconButton from "@mui/joy/IconButton";
+import config from "@/config.js";
 
-const API_HOST = "https://rest-api-zzvthujxxq-as.a.run.app"; // Ganti dengan host Anda jika berbeda
-const API_PORT = 3001;
 
 function ModulList() {
   // Buat sebuah jenis yang mencerminkan struktur data dari API
@@ -34,7 +33,7 @@ function ModulList() {
 
   const fetchData = async () => {
     try {
-      const response = await axios.get(`${API_HOST}:${API_PORT}/api/modul`);
+      const response = await axios.get(`${config.API_URL}/api/modul`);
       if (response.status === 200) {
         setTestData(response.data);
         console.log(response.data);
@@ -61,7 +60,7 @@ function ModulList() {
   const handleDelete = (id: number) => {
     // Panggil endpoint dengan menggunakan ID modul
     axios
-      .delete(`${API_HOST}:${API_PORT}/api/modul/${id}`)
+      .delete(`${config.API_URL}/api/modul/${id}`)
       .then((response) => {
         console.log(id);
         setOpen(null);

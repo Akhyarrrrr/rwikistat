@@ -17,9 +17,8 @@ import {
   BiBookmark,
 } from "react-icons/bi";
 import LikeButton from "./LikeButton";
+import config from "@/config.js";
 
-const API_HOST = "https://rest-api-zzvthujxxq-as.a.run.app"; // Ganti dengan host Anda jika berbeda
-const API_PORT = 3001;
 
 export default function DetailPage() {
   const { user } = UserAuth();
@@ -37,7 +36,7 @@ export default function DetailPage() {
   useEffect(() => {
     if (forumId) {
       // Lakukan permintaan ke API untuk mendapatkan data detail modul berdasarkan ID
-      fetch(`${API_HOST}:${API_PORT}/api/forum/${forumId}`)
+      fetch(`${config.API_URL}/api/forum/${forumId}`)
         .then((response) => {
           if (!response.ok) {
             throw new Error("Gagal mengambil data postingan.");
@@ -51,7 +50,7 @@ export default function DetailPage() {
           console.error("Gagal mengambil data postingan:", error);
         });
 
-      fetch(`${API_HOST}:${API_PORT}/api/forum/${forumId}/comments`)
+      fetch(`${config.API_URL}/api/forum/${forumId}/comments`)
         .then((response) => {
           if (!response.ok) {
             throw new Error("Gagal mengambil komentar.");
@@ -115,7 +114,7 @@ export default function DetailPage() {
 
       // Kirim komentar ke endpoint Express dengan ID pengguna yang aktif
       const response = await axios.post(
-        `${API_HOST}:${API_PORT}/api/forum/${topicId}/comments`,
+        `${config.API_URL}/api/forum/${topicId}/comments`,
         { text, userId }
       );
 
@@ -127,7 +126,7 @@ export default function DetailPage() {
         });
 
         // Refresh comments data after a successful submission
-        fetch(`${API_HOST}:${API_PORT}/api/forum/${topicId}/comments`)
+        fetch(`${config.API_URL}/api/forum/${topicId}/comments`)
           .then((response) => response.json())
           .then((data) => {
             setComments(data); // Update comments with the latest data

@@ -5,9 +5,8 @@ import { auth } from "../app/firebaseConfig";
 import { UserAuth } from "../app/context/authContext";
 import SendIcon from "@mui/icons-material/Send";
 import Box from "@mui/material/Box";
+import config from "@/config.js";
 
-const API_HOST = "https://rest-api-zzvthujxxq-as.a.run.app"; // Ganti dengan host Anda jika berbeda
-const API_PORT = 5000;
 
 interface ChatData {
   id: string;
@@ -70,7 +69,7 @@ const ChatBot = () => {
         return;
       }
       const response = await axiosInstance.get(
-        `${API_HOST}:${API_PORT}/api/chatbot/`
+        `${config.API_URL}/api/chatbot/`
       );
       if (response.status === 200) {
         const data = response.data;
@@ -111,7 +110,7 @@ const ChatBot = () => {
     const userId = user?.uid;
 
     // Kirim permintaan ke endpoint chatbot
-    const response = await axios.post(`${API_HOST}:${API_PORT}/api/chatbot/`, {
+    const response = await axios.post(`${config.API_URL}/api/chatbot/`, {
       instances: [
         {
           context:

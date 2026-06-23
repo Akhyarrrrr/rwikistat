@@ -373,6 +373,7 @@ router.post("/newshiny", async (req, res) => {
 
 // Endpoint di server web
 router.post("/newshiny-web", async (req, res) => {
+  let filePath;
   try {
     const { code } = req.body;
     if (!code) {
@@ -382,7 +383,7 @@ router.post("/newshiny-web", async (req, res) => {
     }
 
     const random = Math.random().toString(36).substring(7);
-    const filePath = `./temp/${random}.R`;
+    filePath = `./temp/${random}.R`;
 
     if (!fs.existsSync("./temp")) {
       fs.mkdirSync("./temp");
@@ -423,7 +424,7 @@ router.post("/newshiny-web", async (req, res) => {
     console.error("Error in /newshiny:", err);
 
     // Cleanup in case of error
-    if (fs.existsSync(filePath)) {
+    if (filePath && fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
 

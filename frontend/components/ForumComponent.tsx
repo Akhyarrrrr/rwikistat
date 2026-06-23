@@ -20,9 +20,8 @@ import DialogContent from "@mui/joy/DialogContent";
 import DialogActions from "@mui/joy/DialogActions";
 import ModalDialog from "@mui/joy/ModalDialog";
 import Divider from "@mui/joy/Divider";
+import config from "@/config.js";
 
-const API_HOST = "https://rest-api-zzvthujxxq-as.a.run.app"; // Ganti dengan host Anda jika berbeda
-const API_PORT = 3001;
 
 interface ForumData {
   id: string;
@@ -81,7 +80,7 @@ const ForumComponent: React.FC = () => {
 
   const fetchData = async (page: number | undefined) => {
     try {
-      const url = `${API_HOST}:${API_PORT}/api/forum/page?page=${page}`;
+      const url = `${config.API_URL}/api/forum/page?page=${page}`;
 
       const response = await axios.get(url);
       if (response.status === 200) {
@@ -152,7 +151,7 @@ const ForumComponent: React.FC = () => {
       });
 
       const response = await axios.post(
-        `${API_HOST}:${API_PORT}/api/forum`,
+        `${config.API_URL}/api/forum`,
         formData,
         {
           headers: {

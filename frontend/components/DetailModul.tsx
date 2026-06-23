@@ -2,9 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Spinner from "./Spinner";
+import config from "@/config.js";
 
-const API_HOST = "https://rest-api-zzvthujxxq-as.a.run.app"; // Ganti dengan host Anda jika berbeda
-const API_PORT = 3001;
 
 export default function DetailPage() {
   const pathname = usePathname();
@@ -17,7 +16,7 @@ export default function DetailPage() {
   useEffect(() => {
     if (modulId) {
       // Lakukan permintaan ke API untuk mendapatkan data detail modul berdasarkan ID
-      fetch(`${API_HOST}:${API_PORT}/api/modul/${modulId}`)
+      fetch(`${config.API_URL}/api/modul/${modulId}`)
         .then((response) => {
           if (!response.ok) {
             throw new Error("Gagal mengambil data detail modul.");
