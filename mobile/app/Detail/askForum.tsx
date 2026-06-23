@@ -14,13 +14,12 @@ import { router, Stack } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/context/authContext";
-import ImageResizer from "react-native-image-resizer";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import config from "@/config";
 
 interface ImagePickerResult {
   canceled: boolean;
-  assets: Array<{ uri: string }> | null;
+  assets: { uri: string }[] | null;
 }
 
 const AskForum = () => {
@@ -28,7 +27,7 @@ const AskForum = () => {
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [image, setImage] = useState<string | null>(null);
-  const { accessToken, getUser } = useAuth();
+  const { getAccessToken, getUser } = useAuth();
   const [user, setUser] = useState<any>(null);
   const [successMessage, setSuccessMessage] = useState("");
   const slideAnim = useState(new Animated.Value(0))[0];
@@ -46,7 +45,7 @@ const AskForum = () => {
       } else setUser(dataUser);
     };
     fetchUserData();
-  }, []);
+  }, [getUser]);
 
   useEffect(() => {
     if (successMessage) {
@@ -64,23 +63,7 @@ const AskForum = () => {
         }, 2000);
       });
     }
-  }, [successMessage]);
-
-  const resizeImage = async (uri: string) => {
-    try {
-      const resizedImage = await ImageResizer.createResizedImage(
-        uri,
-        1024, // width
-        1024, // height
-        "JPEG", // format
-        80 // quality
-      );
-      return resizedImage.uri;
-    } catch (error) {
-      console.error("Error resizing image:", error);
-      return uri; // Return original if resizing fails
-    }
-  };
+  }, [successMessage, slideAnim]);
 
   const pickImage = async () => {
     let result: ImagePickerResult = await ImagePicker.launchImageLibraryAsync({
@@ -124,12 +107,13 @@ const AskForum = () => {
   };
 
   const submitQuestion = async () => {
-    if (!topic || !description) {
-      setSuccessMessage("Topik dan deskripsi wajib diisi.");
+    if (!topic || !description || !user?.uid) {
+      setSuccessMessage("Topik, deskripsi, dan user wajib diisi.");
       return;
     }
 
     try {
+      const accessToken = await getAccessToken();
       const formData: any = new FormData();
       formData.append("topics", description);
       formData.append("title", topic);
@@ -147,7 +131,6 @@ const AskForum = () => {
         {
           method: "POST",
           headers: {
-            "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${accessToken}`,
           },
           body: formData,
