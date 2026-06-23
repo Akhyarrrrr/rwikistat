@@ -50,6 +50,12 @@ router.post("/", upload.array("images", 3), async (req, res) => {
     const title = req.body.title;
     const images = req.files;
 
+    if (!uid || !title || !topics) {
+      return res
+        .status(400)
+        .json({ error: "uid, title, dan topics wajib diisi." });
+    }
+
     const topicsData = {
       topics: topics,
       uid: uid,
@@ -306,7 +312,9 @@ router.post("/:topicId/comments", async (req, res) => {
     const { topicId } = req.params;
     const { text, uid } = req.body;
 
-    // Validasi input (pastikan text tidak kosong, userId valid, dll.)
+    if (!uid || !text) {
+      return res.status(400).json({ error: "uid dan text wajib diisi." });
+    }
 
     // Data komentar yang akan ditambahkan
     const commentData = {
@@ -373,6 +381,10 @@ router.post("/like/:id", async (req, res) => {
   const forumId = req.params.id;
   const uid = req.body.uid; // Ambil ID pengguna yang sudah masuk
 
+  if (!uid) {
+    return res.status(400).json({ error: "uid wajib diisi." });
+  }
+
   try {
     // Dapatkan dokumen postingan berdasarkan ID
     const forumDocRef = firestore.collection("forum").doc(forumId);
@@ -412,6 +424,10 @@ router.post("/like/:id", async (req, res) => {
 router.post("/unlike/:id", async (req, res) => {
   const forumId = req.params.id;
   const uid = req.body.uid; // Ambil ID pengguna yang sudah masuk
+
+  if (!uid) {
+    return res.status(400).json({ error: "uid wajib diisi." });
+  }
 
   try {
     // Dapatkan dokumen postingan berdasarkan ID
@@ -497,6 +513,10 @@ router.post("/bookmark/:id", async (req, res) => {
   const forumId = req.params.id;
   const uid = req.body.uid; // Ambil ID pengguna yang sudah masuk
 
+  if (!uid) {
+    return res.status(400).json({ error: "uid wajib diisi." });
+  }
+
   try {
     // Dapatkan dokumen postingan berdasarkan ID
     const forumDocRef = firestore.collection("forum").doc(forumId);
@@ -535,6 +555,10 @@ router.post("/bookmark/:id", async (req, res) => {
 router.post("/unbookmark/:id", async (req, res) => {
   const forumId = req.params.id;
   const uid = req.body.uid; // Ambil ID pengguna yang sudah masuk
+
+  if (!uid) {
+    return res.status(400).json({ error: "uid wajib diisi." });
+  }
 
   try {
     // Dapatkan dokumen postingan berdasarkan ID
