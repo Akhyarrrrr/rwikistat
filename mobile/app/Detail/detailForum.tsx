@@ -50,12 +50,11 @@ export default function DetailForum() {
     image,
     photo,
     bookmarkCount,
-    bookmark,
   } = params;
 
   const [comment, setComment] = useState("");
   const [commentList, setCommentList] = useState<CommentType[]>([]);
-  const { getAccessToken, accessToken, getUser } = useAuth();
+  const { getAccessToken, getUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -103,7 +102,7 @@ export default function DetailForum() {
     }
   };
 
-  const fetchComment = async () => {
+  const fetchComment = useCallback(async () => {
     const accessToken = await getAccessToken();
     try {
       const response = await fetch(
@@ -131,26 +130,30 @@ export default function DetailForum() {
     } catch (error) {
       console.error("Error fetching forum data:", error);
     }
-  };
+  }, [getAccessToken, id]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchComment();
     setRefreshing(false);
-  }, []);
+  }, [fetchComment]);
 
   useEffect(() => {
     fetchComment().finally(() => setIsLoading(false));
-  }, []);
+  }, [fetchComment]);
 
   const handleCommentSubmit = async () => {
     if (!comment.trim()) return;
     setIsSubmitting(true);
     try {
       const user = await getUser();
+      const accessToken = await getAccessToken();
+
+      if (!user?.uid) return;
+
       const requestBody = {
         text: comment,
-        uid: user?.uid,
+        uid: user.uid,
       };
       const response = await fetch(
         `${config.API_URL}/api/forum/${id}/comments`,
@@ -166,7 +169,7 @@ export default function DetailForum() {
 
       if (response.ok) {
         setComment("");
-        fetchComment();
+        await fetchComment();
       }
     } catch (error) {
       console.error("Error submitting comment:", error);
