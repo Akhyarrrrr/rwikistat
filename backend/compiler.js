@@ -17,6 +17,12 @@ const writeTempRFile = (code) => {
   return filePath;
 };
 
+const cleanupFile = (filePath) => {
+  if (filePath && fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
+};
+
 // Middleware untuk verifikasi token bearer
 const verifyToken = (req, res, next) => {
   const bearerHeader = req.headers["authorization"];
@@ -50,6 +56,7 @@ router.post("/", (req, res) => {
   const process = spawn("Rscript", [filePath]);
 
   let output = "";
+  let finished = false;
 
   process.stdout.on("data", (data) => {
     output += data.toString();
@@ -59,9 +66,21 @@ router.post("/", (req, res) => {
     output += data.toString();
   });
 
+  process.on("error", (error) => {
+    if (finished) return;
+    finished = true;
+    cleanupFile(filePath);
+    res.status(500).send(`Failed to run Rscript: ${error.message}`);
+  });
+
   process.on("close", (code) => {
+    if (finished) {
+      cleanupFile(filePath);
+      return;
+    }
+    finished = true;
     // Delete the generated file
-    fs.unlinkSync(filePath);
+    cleanupFile(filePath);
 
     // Send the output to the client
     res.send(output);
@@ -75,6 +94,7 @@ router.post("/test/", (req, res) => {
   const process = spawn("Rscript", [filePath]);
 
   let output = "";
+  let finished = false;
 
   process.stdout.on("data", (data) => {
     output += data.toString();
@@ -84,9 +104,21 @@ router.post("/test/", (req, res) => {
     output += data.toString();
   });
 
+  process.on("error", (error) => {
+    if (finished) return;
+    finished = true;
+    cleanupFile(filePath);
+    res.status(500).send(`Failed to run Rscript: ${error.message}`);
+  });
+
   process.on("close", (code) => {
+    if (finished) {
+      cleanupFile(filePath);
+      return;
+    }
+    finished = true;
     // Delete the generated file
-    fs.unlinkSync(filePath);
+    cleanupFile(filePath);
 
     // Check if out.png file exists
     const pngFilePath = "out.png";
@@ -120,6 +152,7 @@ router.post("/modul", (req, res) => {
   });
 
   let output = "";
+  let finished = false;
 
   process.stdout.on("data", (data) => {
     output += data.toString();
@@ -132,13 +165,26 @@ router.post("/modul", (req, res) => {
   process.on("message", (message) => {
     if (message.port) {
       // Send the output and shiny port to the client
+      finished = true;
       res.send({ output, port: message.port });
     }
   });
 
+  process.on("error", (error) => {
+    if (finished) return;
+    finished = true;
+    cleanupFile(filePath);
+    res.status(500).send(`Failed to run Rscript: ${error.message}`);
+  });
+
   process.on("close", (code) => {
+    if (finished) {
+      cleanupFile(filePath);
+      return;
+    }
+    finished = true;
     // Delete the generated file
-    fs.unlinkSync(filePath);
+    cleanupFile(filePath);
 
     if (code !== 0) {
       // If the code is not 0, it means there was an error
@@ -158,6 +204,7 @@ router.post("/shiny", (req, res) => {
   const process = spawn("Rscript", [filePath]);
 
   let output = "";
+  let finished = false;
 
   process.stdout.on("data", (data) => {
     output += data.toString();
@@ -167,7 +214,17 @@ router.post("/shiny", (req, res) => {
     output += data.toString();
   });
 
+  process.on("error", (error) => {
+    if (finished) return;
+    finished = true;
+    cleanupFile(filePath);
+    res.status(500).send(`Failed to run Rscript: ${error.message}`);
+  });
+
   process.on("close", (code) => {
+    if (finished) return;
+    finished = true;
+    cleanupFile(filePath);
     // Ambil satu atau dua angka terakhir dari nilai port
     const shinyOutput = port;
 
@@ -279,6 +336,10 @@ const runShiny = async (req, res) => {
       stdio: "ignore",
       detached: true,
     });
+    const spawnError = new Promise((_, reject) => {
+      shinyProcess.once("error", reject);
+    });
+    spawnError.catch(() => {});
     shinyProcess.unref();
 
     const url = `${process.env.PUBLIC_HOST || "http://localhost"}:${port}`;
@@ -289,21 +350,17 @@ const runShiny = async (req, res) => {
       timeout: 30000,
     };
 
-    await waitOn(waitOptions);
+    await Promise.race([waitOn(waitOptions), spawnError]);
     res.status(200).json({ success: true, link: url });
 
     setTimeout(() => {
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
+      cleanupFile(filePath);
     }, 120000);
   } catch (err) {
     console.error("Error in /newshiny:", err);
 
     // Cleanup in case of error
-    if (filePath && fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
+    cleanupFile(filePath);
 
     res.status(500).json({ success: false, error: "Server Error" });
   }
