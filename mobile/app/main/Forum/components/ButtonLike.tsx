@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, ActivityIndicator, ToastAndroid, Platform } from "react-native";
 import { useAuth } from "@/context/authContext";
 import { FontAwesome } from "@expo/vector-icons";
@@ -9,68 +9,60 @@ const ButtonLike: React.FC<{ itemId: string }> = ({ itemId }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { getAccessToken, getUser } = useAuth();
 
-  useEffect(() => {
-    handleIsLiked(itemId);
-  }, [itemId]);
-
-  const handleIsLiked = async (itemId: string) => {
+  const handleIsLiked = useCallback(async () => {
     try {
       const user = await getUser();
       const userId = user?.uid;
-      if (userId) {
-        const accessToken = await getAccessToken();
-        fetch(
-          `${config.API_URL}/api/forum/like/${itemId}/is-liked?uid=${userId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        )
-          .then((response) => response.json())
-          .then((responJson) => {
-            const { isLiked } = responJson;
-            setLikedButton(isLiked);
-            setIsLoading(false);
-          }).then;
-      } else {
+
+      if (!userId) {
         setIsLoading(false);
+        return;
       }
+
+      const accessToken = await getAccessToken();
+      const response = await fetch(
+        `${config.API_URL}/api/forum/like/${itemId}/is-liked?uid=${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      const responseJson = await response.json();
+      setLikedButton(responseJson.isLiked);
     } catch (error) {
       console.error("Gagal mengambil like:", error);
+    } finally {
       setIsLoading(false);
     }
-  };
+  }, [getAccessToken, getUser, itemId]);
+
+  useEffect(() => {
+    handleIsLiked();
+  }, [handleIsLiked]);
 
   const handleLike = async (itemId: string) => {
     try {
       setIsLoading(true);
-      const userData: any = await getUser();
+      const userData = await getUser();
       const userId = userData?.uid;
-      if (userId) {
-        const accessToken = await getAccessToken();
-        const requestBody = {
-          uid: userId,
-        };
-        fetch(`${config.API_URL}/api/forum/like/${itemId}`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        })
-          .then((response) => response.json())
-          .then((responJson) => {
-            setLikedButton(true);
-            setIsLoading(false);
-            showToast("Anda telah menyukai postingan ini 🎉");
-          });
-      } else {
-        setIsLoading(false);
-      }
+
+      if (!userId) return;
+
+      const accessToken = await getAccessToken();
+      await fetch(`${config.API_URL}/api/forum/like/${itemId}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ uid: userId }),
+      });
+      setLikedButton(true);
+      showToast("Anda telah menyukai postingan ini");
     } catch (error) {
       console.error("Gagal menyukai postingan:", error);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -78,42 +70,36 @@ const ButtonLike: React.FC<{ itemId: string }> = ({ itemId }) => {
   const handleUnlike = async (itemId: string) => {
     try {
       setIsLoading(true);
-      const userData: any = await getUser();
+      const userData = await getUser();
       const userId = userData?.uid;
-      if (userId) {
-        const accessToken = await getAccessToken();
-        const requestBody = {
-          uid: userId,
-        };
-        fetch(`${config.API_URL}/api/forum/unlike/${itemId}`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        })
-          .then((response) => response.json())
-          .then((responJson) => {
-            setLikedButton(false);
-            setIsLoading(false);
-            showToast("Anda telah membatalkan like pada postingan ini 😢");
-          });
-      } else {
-        setIsLoading(false);
-      }
+
+      if (!userId) return;
+
+      const accessToken = await getAccessToken();
+      await fetch(`${config.API_URL}/api/forum/unlike/${itemId}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ uid: userId }),
+      });
+      setLikedButton(false);
+      showToast("Anda telah membatalkan like pada postingan ini");
     } catch (error) {
       console.error("Gagal unlike postingan:", error);
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const onPressHandler = buttonLike ? handleUnlike : handleLike;
   const showToast = (message: string) => {
-    if (Platform.OS === "android" || Platform.OS === "ios") {
+    if (Platform.OS === "android") {
       ToastAndroid.show(message, ToastAndroid.SHORT);
     }
   };
+
+  const onPressHandler = buttonLike ? handleUnlike : handleLike;
 
   return (
     <View className="pb-1">
@@ -121,13 +107,10 @@ const ButtonLike: React.FC<{ itemId: string }> = ({ itemId }) => {
         <ActivityIndicator size="small" color="#00726B" />
       ) : (
         <FontAwesome
-          onPress={() => {
-            onPressHandler(itemId);
-          }}
+          onPress={() => onPressHandler(itemId)}
           name={buttonLike ? "thumbs-up" : "thumbs-o-up"}
           size={20}
-          color={buttonLike ? "#00726B" : "#00726B"}
-          id={itemId}
+          color="#00726B"
         />
       )}
     </View>

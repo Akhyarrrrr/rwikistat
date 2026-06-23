@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, ActivityIndicator, ToastAndroid, Platform } from "react-native";
 import { useAuth } from "@/context/authContext";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -9,74 +9,60 @@ const ButtonBookmark: React.FC<{ itemId: string }> = ({ itemId }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { getAccessToken, getUser } = useAuth();
 
-  useEffect(() => {
-    handleIsBookmarked(itemId);
-  }, [itemId]);
-
-  const handleIsBookmarked = async (itemId: string) => {
+  const handleIsBookmarked = useCallback(async () => {
     try {
       const user = await getUser();
       const userId = user?.uid;
-      if (userId) {
-        const accessToken = await getAccessToken();
-        fetch(
-          `${config.API_URL}/api/forum/bookmark/${itemId}/is-bookmarked?uid=${userId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        )
-          .then((response) => response.json())
-          .then((responJson) => {
-            const { isBookmarked } = responJson;
-            setBookmarkButton(isBookmarked);
-            setIsLoading(false);
-          });
-      } else {
+
+      if (!userId) {
         setIsLoading(false);
+        return;
       }
+
+      const accessToken = await getAccessToken();
+      const response = await fetch(
+        `${config.API_URL}/api/forum/bookmark/${itemId}/is-bookmarked?uid=${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      const responseJson = await response.json();
+      setBookmarkButton(responseJson.isBookmarked);
     } catch (error) {
       console.error("Gagal mengambil bookmark:", error);
+    } finally {
       setIsLoading(false);
     }
-  };
+  }, [getAccessToken, getUser, itemId]);
 
-  const showToast = (message: string) => {
-    if (Platform.OS === "android" || Platform.OS === "ios") {
-      ToastAndroid.show(message, ToastAndroid.SHORT);
-    }
-  };
+  useEffect(() => {
+    handleIsBookmarked();
+  }, [handleIsBookmarked]);
 
   const handleBookmark = async (itemId: string) => {
     try {
       setIsLoading(true);
-      const userData: any = await getUser();
+      const userData = await getUser();
       const userId = userData?.uid;
-      if (userId) {
-        const accessToken = await getAccessToken();
-        const requestBody = {
-          uid: userId,
-        };
-        fetch(`${config.API_URL}/api/forum/bookmark/${itemId}`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        })
-          .then((response) => response.json())
-          .then((responJson) => {
-            setBookmarkButton(true);
-            setIsLoading(false);
-            showToast("Anda telah memberi bookmark pada postingan ini 🎉");
-          });
-      } else {
-        setIsLoading(false);
-      }
+
+      if (!userId) return;
+
+      const accessToken = await getAccessToken();
+      await fetch(`${config.API_URL}/api/forum/bookmark/${itemId}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ uid: userId }),
+      });
+      setBookmarkButton(true);
+      showToast("Anda telah memberi bookmark pada postingan ini");
     } catch (error) {
       console.error("Gagal memberi bookmark postingan:", error);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -84,33 +70,32 @@ const ButtonBookmark: React.FC<{ itemId: string }> = ({ itemId }) => {
   const handleUnbookmark = async (itemId: string) => {
     try {
       setIsLoading(true);
-      const userData: any = await getUser();
+      const userData = await getUser();
       const userId = userData?.uid;
-      if (userId) {
-        const accessToken = await getAccessToken();
-        const requestBody = {
-          uid: userId,
-        };
-        fetch(`${config.API_URL}/api/forum/unbookmark/${itemId}`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        })
-          .then((response) => response.json())
-          .then((responJson) => {
-            setBookmarkButton(false);
-            setIsLoading(false);
-            showToast("Anda telah membatalkan bookmark pada postingan ini 😢");
-          });
-      } else {
-        setIsLoading(false);
-      }
+
+      if (!userId) return;
+
+      const accessToken = await getAccessToken();
+      await fetch(`${config.API_URL}/api/forum/unbookmark/${itemId}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ uid: userId }),
+      });
+      setBookmarkButton(false);
+      showToast("Anda telah membatalkan bookmark pada postingan ini");
     } catch (error) {
       console.error("Gagal unbookmark postingan:", error);
+    } finally {
       setIsLoading(false);
+    }
+  };
+
+  const showToast = (message: string) => {
+    if (Platform.OS === "android") {
+      ToastAndroid.show(message, ToastAndroid.SHORT);
     }
   };
 
@@ -122,13 +107,10 @@ const ButtonBookmark: React.FC<{ itemId: string }> = ({ itemId }) => {
         <ActivityIndicator size="small" color="#00726B" />
       ) : (
         <MaterialIcons
-          onPress={() => {
-            onPressHandler(itemId);
-          }}
+          onPress={() => onPressHandler(itemId)}
           name={buttonBookmark ? "bookmark" : "bookmark-border"}
           size={20}
-          color={buttonBookmark ? "#00726B" : "#00726B"}
-          id={itemId}
+          color="#00726B"
         />
       )}
     </View>

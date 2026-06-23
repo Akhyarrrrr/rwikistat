@@ -60,7 +60,7 @@ const Forum: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
-  const { getAccessToken, user } = useAuth();
+  const { getAccessToken } = useAuth();
   const { setIsInputFocused } = useTabVisibility();
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const scheme = useColorScheme();
@@ -85,9 +85,9 @@ const Forum: React.FC = () => {
       keyboardDidShowListener.remove();
       keyboardDidHideListener.remove();
     };
-  }, []);
+  }, [setIsInputFocused]);
 
-  const fetchForumData = async () => {
+  const fetchForumData = useCallback(async () => {
     const accessToken = await getAccessToken();
     try {
       const response = await fetch(
@@ -114,7 +114,7 @@ const Forum: React.FC = () => {
         photo: item.user.photoURL,
         bookmarkCount: item.data.bookmarks?.length || 0,
         bookmark: item.data.bookmarks || [],
-        userId: user?.uid,
+        userId: item.data.uid,
       }));
       setPosts(mappedPosts);
       setLoading(false);
@@ -124,17 +124,17 @@ const Forum: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [getAccessToken]);
 
   useEffect(() => {
     setLoading(true);
     fetchForumData();
-  }, []);
+  }, [fetchForumData]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchForumData();
-  }, []);
+  }, [fetchForumData]);
 
   const getSortedPosts = (posts: ForumPostProps[]) => {
     switch (sortBy) {
@@ -269,7 +269,7 @@ const Forum: React.FC = () => {
           >
             {filteredPosts.length > 0 ? (
               filteredPosts.map((post, index) => (
-                <ForumPost key={index} {...post} userId={user?.uid || ""} />
+                <ForumPost key={index} {...post} />
               ))
             ) : (
               <View className="items-center justify-center flex-1 mt-10">
@@ -314,15 +314,6 @@ const ForumPost: React.FC<ForumPostProps> = ({
   bookmarkCount,
   userId,
 }) => {
-  const [isLiked, setIsLiked] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
-  const [likeCount, setLikeCount] = useState(likes);
-  const { getUser, getAccessToken } = useAuth();
-
-  const handleBookmarkPress = () => {
-    setIsBookmarked(!isBookmarked);
-  };
-
   const handleCopyPress = async () => {
     const contentToCopy = `${question}\n\n${description}`;
     await Clipboard.setStringAsync(contentToCopy);
@@ -341,10 +332,12 @@ const ForumPost: React.FC<ForumPostProps> = ({
         time,
         question,
         description,
-        likes: likeCount,
+        likes,
         image,
         photo,
         bookmark,
+        bookmarkCount,
+        userId,
       },
     });
   };
@@ -356,7 +349,7 @@ const ForumPost: React.FC<ForumPostProps> = ({
     >
       <View className="flex-row items-center">
         <View className="border-2 rounded-md border-primary">
-          <Image src={photo} className="w-10 h-10" />
+          <Image source={{ uri: photo }} className="w-10 h-10" />
         </View>
         <View className="ml-3">
           <View className="flex-row items-center">
