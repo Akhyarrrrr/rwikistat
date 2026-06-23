@@ -159,7 +159,7 @@ export default function DetailPage() {
     <div className="p-4 w-full md:w-3/4 items-center justify-center mx-auto font-poppins">
       {detailForum ? (
         <div className="items-start px-4 py-6 my-5 shadow-md rounded-lg border font-poppins">
-          <Link href={`/userId`}>
+          <Link href={`/userId/${detailForum.data.uid}`}>
             <div className="flex">
               <div className=" rounded-full mr-2">
                 <Image
