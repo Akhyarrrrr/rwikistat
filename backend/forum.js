@@ -163,7 +163,7 @@ router.get("/page/", async (req, res) => {
     const snapshot = await firestore
       .collection("forum")
       .orderBy("createdAt", "desc")
-      // .limit(itemsPerPage)
+      .limit(itemsPerPage)
       .offset(startIndex)
       .get();
 
@@ -634,7 +634,7 @@ router.get("/bookmarks/:uid", async (req, res) => {
 
     const snapshot = await query
       // .orderBy('createdAt', 'desc')
-      // .limit(itemsPerPage)
+      .limit(itemsPerPage)
       .offset(startIndex)
       .get();
 
@@ -775,7 +775,7 @@ router.get("/posted/:uid", async (req, res) => {
 
     const snapshot = await query
       // .orderBy('createdAt', 'desc')
-      // .limit(itemsPerPage)
+      .limit(itemsPerPage)
       .offset(startIndex)
       .get();
 
