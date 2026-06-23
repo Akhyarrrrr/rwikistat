@@ -59,7 +59,7 @@ export default function Login() {
     };
 
     checkIfAuthenticated();
-  }, []);
+  }, [router]);
 
   // Context untuk otentikasi
   const {

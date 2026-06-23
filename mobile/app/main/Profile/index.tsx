@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   ScrollView,
   RefreshControl,
-  Platform,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router, Stack } from "expo-router";
@@ -15,16 +14,12 @@ import { useAuth } from "@/context/authContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import config from "@/config";
 
-const profilePicture = require("../../../assets/images/icon.png");
-
 const Profile = () => {
   const { logout, getUser, getAccessToken } = useAuth();
   const [user, setUser] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [score, setScore] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
-  const [userData, setUserData] = useState<any>({});
-
   const fetchUser = useCallback(async () => {
     setLoading(true);
     try {
