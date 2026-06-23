@@ -79,7 +79,6 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
 
       // Gunakan idToken sesuai kebutuhan, seperti menyertakannya dalam header permintaan API
       // atau menyimpannya di local storage untuk digunakan nanti
-      console.log("Token Akses:", customToken);
 
       // Set pengguna di aplikasi Anda, jika diperlukan
       setUser(signedInUser);
@@ -126,8 +125,6 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
       const signedInUser = result.user;
       setUser(signedInUser);
       const customToken = await signedInUser.getIdToken();
-      // Panggil handleLoginSuccess di sini jika perlu
-      handleLoginSuccess(email, password);
 
       if (typeof window !== "undefined") {
         // Simpan token di Local Storage
@@ -141,40 +138,6 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
         "Gagal masuk dengan email dan password:",
         authError.message
       );
-    }
-  };
-
-  const handleLoginSuccess = async (email: string, password: string) => {
-    try {
-      const requestBody = {
-        email: email,
-        password: password,
-      };
-
-      // Kirim permintaan ke endpoint di server
-      const response = await fetch(`${config.API_URL}/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody), // Menggunakan UID pengguna yang sudah login
-      });
-
-      if (response.ok) {
-        // Tangani respons dari server
-        const data = await response.json();
-        const customToken = data.customToken;
-        // Cek apakah kode sedang dijalankan di sisi klien
-        if (typeof window !== "undefined") {
-          // Simpan token di Local Storage
-          localStorage.setItem("customToken", customToken);
-        }
-      } else {
-        // Tangani kesalahan jika ada
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      // Tangani kesalahan jaringan jika diperlukan
     }
   };
 
