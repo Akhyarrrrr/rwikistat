@@ -17,7 +17,7 @@ import Modal from "react-native-modal";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import auth from "@react-native-firebase/auth";
 import { useAuth } from "@/context/authContext";
-import { useNavigation, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { doc, getDoc, setDoc, getFirestore } from "firebase/firestore";

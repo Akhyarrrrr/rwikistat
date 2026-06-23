@@ -2,7 +2,7 @@ import React from "react";
 import { Tabs } from "expo-router";
 import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, useState, createContext, useContext } from "react";
+import { useState, createContext, useContext } from "react";
 
 export const TabVisibilityContext = createContext({
   setIsInputFocused: (focused: boolean) => {},

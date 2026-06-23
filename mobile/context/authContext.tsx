@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { signOut, signInWithEmailAndPassword } from "firebase/auth";
-import { useNavigation, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { auth } from "../firebase";
@@ -27,7 +27,6 @@ interface AuthContextType {
   handleAccessToken: (token: string) => Promise<void>;
   getAccessToken: () => Promise<string | null>;
   login: (npm: any, password: any) => Promise<void>;
-  handleLoginSuccess: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   getUser: () => Promise<User | null>;
   errorMessage: string | null;
@@ -46,7 +45,6 @@ const AuthContext = createContext<AuthContextType>({
   handleAccessToken: async () => {},
   getAccessToken: async () => null,
   login: async () => {},
-  handleLoginSuccess: async () => {},
   logout: async () => {},
   getUser: async () => null,
   errorMessage: null,
@@ -62,7 +60,6 @@ export const AuthProvider = ({ children }: any) => {
   const [accessToken, setAccessToken] = useState<string | null>(null); // Token akses
   const [errorMessage, setErrorMessage] = useState<string | null>(null); // Pesan error
   const router = useRouter();
-  const navigation = useNavigation();
 
   // Fungsi untuk mendapatkan token akses dari penyimpanan lokal
   const getAccessToken = async () => {
@@ -123,10 +120,8 @@ export const AuthProvider = ({ children }: any) => {
       await AsyncStorage.setItem("user", JSON.stringify(userData));
       await handleAccessToken(accessToken);
 
-      // Lakukan proses login sukses lainnya
-      handleLoginSuccess(email, password);
       router.replace("/main/Materi");
-    } catch (error) {
+    } catch {
       setErrorMessage("Akun atau kata sandi salah. Silakan coba lagi.");
     }
   };
@@ -144,30 +139,11 @@ export const AuthProvider = ({ children }: any) => {
           body: JSON.stringify(userData),
         }
       );
-      if (response.ok) {
-        const data = await response.json();
-      } else {
+      if (!response.ok) {
         console.error("Gagal mengirim data pengguna ke server.");
       }
     } catch (error) {
       console.error("Error:", error);
-    }
-  };
-
-  // Fungsi untuk menangani login sukses tambahan (server-side)
-  const handleLoginSuccess = async (email: string, password: string) => {
-    try {
-      const requestBody = { email, password };
-      const response = await fetch(`${config.API_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
-      });
-      if (!response.ok) {
-        setErrorMessage("Gagal login ke server.");
-      }
-    } catch (error) {
-      setErrorMessage("Terjadi kesalahan saat menghubungi server.");
     }
   };
 
@@ -226,7 +202,6 @@ export const AuthProvider = ({ children }: any) => {
         handleAccessToken,
         getAccessToken,
         login,
-        handleLoginSuccess,
         logout,
         getUser,
         errorMessage,
