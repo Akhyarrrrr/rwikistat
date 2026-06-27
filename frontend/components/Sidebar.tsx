@@ -37,7 +37,6 @@ import SmsIcon from "@mui/icons-material/Sms";
 import Image from "next/image";
 import RwikiLogo from "@/public/logo-horizontal.png";
 import HistoryIcon from "@mui/icons-material/History";
-import config from "@/config.js";
 import ColorSchemeToggle from "./ColorSchemeToggle";
 import { closeSidebar } from "@/components/utils";
 import { MdVerified } from "react-icons/md";
@@ -76,61 +75,17 @@ function Toggler({
 }
 
 export default function Sidebar() {
-  const { user, logOut } = UserAuth();
+  const { user, userData, logOut } = UserAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [detailUser, setDetailUser] = useState<any>(null);
 
   useEffect(() => {
-    const checkUser = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      if (user) {
-        try {
-          const idTokenResult = await user.getIdTokenResult();
-          const isAdminValue = idTokenResult.claims?.admin || false;
-          setIsAdmin(isAdminValue as boolean);
-        } catch (error) {
-          console.error("Error fetching custom claims:", error);
-          setIsAdmin(false); // Set a default value in case of an error
-        }
-      }
-      setLoading(false);
-    };
-
-    checkUser();
-  }, [user]);
-
-  const fetchUser = async () => {
     if (user) {
-      const id = user.uid;
-      const storedToken = localStorage.getItem("customToken");
-      // Lakukan permintaan ke API untuk mendapatkan data detail modul berdasarkan ID
-      fetch(`${config.API_URL}/api/user/${id}`, {
-        headers: {
-          Authorization: `Bearer ${storedToken}`,
-        },
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Gagal mengambil data user.");
-          }
-          return response.json();
-        })
-        .then((data) => {
-          setDetailUser(data); // Menyimpan data detail modul dalam state
-          console.log("datauser", data);
-        })
-        .catch((error) => {
-          console.error("There was an error!", error);
-        });
+      user.getIdTokenResult().then((idTokenResult) => {
+        setIsAdmin(!!idTokenResult.claims?.admin);
+      }).catch(() => setIsAdmin(false));
     }
-  };
-  useEffect(() => {
-    // Memanggil fetchData untuk mengambil data awal
-    fetchUser();
   }, [user]);
 
-  const [loading, setLoading] = useState(true);
   const photoURL = user?.photoURL || "";
 
   const handleSignOut = async () => {
@@ -332,9 +287,7 @@ export default function Sidebar() {
         ></List>
       </Box>
       <Divider />
-      {loading ? null : !user ? (
-        ""
-      ) : (
+      {!user ? null : (
         <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
           <Image
             src={photoURL}
@@ -348,13 +301,13 @@ export default function Sidebar() {
               <p className="-mt-1 text-base font-medium text-gray-900">
                 {user.displayName}
               </p>
-              {detailUser?.verified ? (
+              {userData?.verified ? (
                 <MdVerified size={18} className="mb-1 ml-1 text-[#00726B]" />
               ) : (
                 ""
               )}
             </div>
-            <Typography level="body-xs">{detailUser?.email}</Typography>
+            <Typography level="body-xs">{userData?.email}</Typography>
             {/* <Typography level="body-xs">{isAdmin}</Typography> */}
           </Box>
           <IconButton size="sm" variant="plain" color="neutral">

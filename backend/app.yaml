@@ -1,8 +1,0 @@
-runtime: nodejs20
-env: flex
-automatic_scaling:
-  max_instances: 10
-  min_instances: 1
-resources:
-  cpu: 2
-  memory_gb: 4

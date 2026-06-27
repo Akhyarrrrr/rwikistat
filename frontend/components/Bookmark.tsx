@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { auth } from "../app/firebase";
+import { auth } from "@/lib/firebase";
 import { BiBookmark, BiSolidBookmark } from "react-icons/bi";
-import config from "@/config.js";
+import config from "@/lib/config";
 
 const Bookmark: React.FC<{ itemId: string }> = ({ itemId }) => {
   const [bookmarkButton, setBookmarkButton] = React.useState(false);

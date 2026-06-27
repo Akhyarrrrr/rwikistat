@@ -2,21 +2,8 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import axios from "axios";
-import ChipDelete from "@mui/joy/ChipDelete";
-import { BiSolidEditAlt, BiX } from "react-icons/bi";
-import Button from "@mui/joy/Button";
-import Divider from "@mui/joy/Divider";
-import DialogTitle from "@mui/joy/DialogTitle";
-import DialogContent from "@mui/joy/DialogContent";
-import DialogActions from "@mui/joy/DialogActions";
-import Modal from "@mui/joy/Modal";
-import ModalDialog from "@mui/joy/ModalDialog";
-import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
-import IconButton from "@mui/joy/IconButton";
-import { MdVerified } from "react-icons/md";
 import VeriviedCard from "@/components/VeriviedCard";
-import AvatarTest from "@/public/avatar-test.png";
-import config from "@/config.js";
+import config from "@/lib/config";
 
 function Verivied() {
   // Buat sebuah jenis yang mencerminkan struktur data dari API

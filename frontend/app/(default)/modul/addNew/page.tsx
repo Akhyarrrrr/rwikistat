@@ -3,7 +3,7 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import MarkdownPreview from "@uiw/react-markdown-preview";
 import Editor from "@monaco-editor/react";
-import config from "@/config.js";
+import config from "@/lib/config";
 
 export default function Page() {
   useEffect(() => {

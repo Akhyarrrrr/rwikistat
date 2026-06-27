@@ -1,4 +1,3 @@
-import { red } from "@mui/material/colors";
 import React from "react";
 import { FaStar } from "react-icons/fa6";
 

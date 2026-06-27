@@ -1,12 +1,12 @@
 "use client";
 import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import axios from "axios";
-import { auth } from "@/app/firebase";
+import { auth } from "@/lib/firebase";
 import Link from "next/link";
 import TimeAgo from "react-timeago";
 import { UserAuth } from "@/app/context/authContext";
 import Pagination from "@/components/Pagination";
-import { BiCommentDetail, BiLink } from "react-icons/bi";
+import { BiCommentDetail } from "react-icons/bi";
 import LikeButton from "@/components/LikeButton";
 import Bookmark from "@/components/Bookmark";
 import ModalClose from "@mui/joy/ModalClose";
@@ -15,9 +15,7 @@ import Modal from "@mui/joy/Modal";
 import Image from "next/image";
 import { IoSearch } from "react-icons/io5";
 import { MdVerified } from "react-icons/md";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import config from "@/config.js";
+import config from "@/lib/config";
 import Snackbar from "@mui/joy/Snackbar";
 import { Button, Typography } from "@mui/joy";
 import StarIcon from "@mui/icons-material/Star";
@@ -61,21 +59,8 @@ interface NewPost {
 }
 
 const ForumComponent: React.FC = () => {
-  const notify = () =>
-    toast("🦄 Wow so easy!", {
-      position: "bottom-right",
-      autoClose: 3000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: "light",
-    });
-
   useEffect(() => {
     document.title = "Forum Diskusi | Rwikistat";
-    return () => {};
   }, []);
 
   const [open, setOpen] = React.useState<boolean>(false);
@@ -93,7 +78,6 @@ const ForumComponent: React.FC = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const [isLiked, setIsLiked] = useState(false);
   const photoURL = user?.photoURL || "";
   const [searchTerm, setSearchTerm] = useState("");
 

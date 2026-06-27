@@ -14,7 +14,7 @@ import ModalDialog from "@mui/joy/ModalDialog";
 import WarningRoundedIcon from "@mui/icons-material/WarningRounded";
 import IconButton from "@mui/joy/IconButton";
 import { UserAuth } from "@/app/context/authContext";
-import config from "@/config.js";
+import config from "@/lib/config";
 
 function ModulList() {
   // Buat sebuah jenis yang mencerminkan struktur data dari API
@@ -24,6 +24,7 @@ function ModulList() {
       namaModul: string;
       codeSampel: string;
       judulModul: string;
+      isLocked?: boolean;
     };
   }
 
@@ -188,11 +189,16 @@ function ModulList() {
                   )}
                 </div>
               </div>
+              {item.data.isLocked && (
+                <div className="absolute top-2 left-2 z-30 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
+                  Terkunci
+                </div>
+              )}
             </div>
 
             <Link
-              href={`/modul/${item.id}`}
-              className="absolute bottom-0 z-20 m-0 pb-4 ps-4 transition duration-300 ease-in-out group-hover:-translate-y-1 group-hover:translate-x-3 group-hover:scale-110"
+              href={item.data.isLocked ? "#" : `/modul/${item.id}`}
+              className={`absolute bottom-0 z-20 m-0 pb-4 ps-4 transition duration-300 ease-in-out ${item.data.isLocked ? "opacity-50 pointer-events-none" : "group-hover:-translate-y-1 group-hover:translate-x-3 group-hover:scale-110"}`}
             >
               <div className="">
                 <h1 className=" text-2xl md:text-4xl font-bold text-white">

@@ -7,7 +7,7 @@ import Select from "react-select";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import MarkdownPreview from "@uiw/react-markdown-preview";
-import config from "@/config.js";
+import config from "@/lib/config";
 import { Button } from "@nextui-org/react";
 import { classnames } from "@/components/compiler/utils/general";
 
@@ -229,9 +229,17 @@ export default function DetailPage() {
     }
   };
 
+  const isLocked = detailModul?.data?.isLocked;
+
   return (
     <div className="px-8">
       {detailModul ? (
+        isLocked ? (
+          <div className="mt-20 text-center">
+            <h1 className="text-3xl font-bold text-red-600">Modul Terkunci</h1>
+            <p className="text-gray-600 mt-2">Modul ini sedang dikunci oleh admin. Silakan coba lagi nanti.</p>
+          </div>
+        ) : (
         <div className="mt-5">
           <div className="grid grid-cols-2 gap-7 mb-5 bg-gray-100 px-5 py-3 outline outline-1 rounded-lg outline-gray-300">
             <h1 className=" font-extrabold text-base md:text-2xl text-[#00726B]">
@@ -367,6 +375,7 @@ export default function DetailPage() {
             )}
           </div>
         </div>
+        )
       ) : (
         <Spinner />
       )}

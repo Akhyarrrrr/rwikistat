@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import profile from "@/assets/images/profile.png";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import axios from "axios";
@@ -19,7 +18,7 @@ import QuestionAnswerRoundedIcon from "@mui/icons-material/QuestionAnswerRounded
 import { BiSolidBookmark } from "react-icons/bi";
 import Link from "next/link";
 import StarRating from "@/components/StarRating";
-import config from "@/config.js";
+import config from "@/lib/config";
 import LinkButton from "@/components/LinkButton";
 
 interface UserData {

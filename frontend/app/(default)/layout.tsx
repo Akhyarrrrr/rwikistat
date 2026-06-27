@@ -1,17 +1,12 @@
 "use client";
 import "../globals.css";
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import { AuthContextProvider } from "../context/authContext";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import * as React from "react";
-import { CssVarsProvider } from "@mui/joy/styles";
+import { CssVarsProvider, StyledEngineProvider } from "@mui/joy/styles";
 import CssBaseline from "@mui/joy/CssBaseline";
 import Box from "@mui/joy/Box";
-import { StyledEngineProvider } from "@mui/joy/styles";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({
   children,

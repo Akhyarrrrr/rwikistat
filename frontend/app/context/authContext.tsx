@@ -15,8 +15,8 @@ import {
   GoogleAuthProvider,
   IdTokenResult,
 } from "firebase/auth";
-import { auth } from "../firebase";
-import config from "@/config.js";
+import { auth } from "@/lib/firebase";
+import config from "@/lib/config";
 
 interface User {
   uid: string | null;
@@ -28,16 +28,11 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  userData: any;
   googleSignIn: () => Promise<void>;
   emailSignIn: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, displayName: string) => Promise<{ uid: string } | null>;
   logOut: () => Promise<void>;
-}
-
-interface UserData {
-  uid: string;
-  role: string;
-  displayName: string;
-  photoURL: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,7 +42,6 @@ interface AuthContextProviderProps {
 }
 
 const AUTO_LOGOUT_TIME = 6 * 60 * 60 * 1000;
-// const AUTO_LOGOUT_TIME = 6 * 60 * 60 * 1000; // 6 jam dalam milidetik
 
 export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
   children,
@@ -55,40 +49,58 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
   children: React.ReactNode;
 }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [userData, setUserData] = useState<any>(null);
+
+  const fetchUserData = async (idToken: string) => {
+    try {
+      const res = await fetch(`${config.API_URL}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUserData(data);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("userData", JSON.stringify(data));
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+  };
+
+  const register = async (email: string, password: string, displayName: string) => {
+    try {
+      const res = await fetch(`${config.API_URL}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, displayName }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Gagal mendaftar");
+      }
+      return await res.json();
+    } catch (error) {
+      console.error("Register error:", error);
+      throw error;
+    }
+  };
 
   const googleSignIn = async () => {
     const provider = new GoogleAuthProvider();
     try {
       const result: UserCredential = await signInWithPopup(auth, provider);
       const signedInUser = result.user;
-
-      // Set data yang ingin Anda kirimkan ke server
-      const userData = {
-        email: signedInUser.email || "",
-        role: "user", // Ganti ini dengan cara Anda menentukan peran (role) pengguna
-        uid: signedInUser.uid,
-        displayName: signedInUser.displayName || "",
-        photoURL: signedInUser.photoURL || "",
-      };
-
-      // Kirim data pengguna ke endpoint REST API
-      await sendUserDataToServer(userData);
-
-      // Mendapatkan token akses
-      const customToken = await signedInUser.getIdToken();
-
-      // Gunakan idToken sesuai kebutuhan, seperti menyertakannya dalam header permintaan API
-      // atau menyimpannya di local storage untuk digunakan nanti
-      console.log("Token Akses:", customToken);
-
-      // Set pengguna di aplikasi Anda, jika diperlukan
       setUser(signedInUser);
 
+      const idToken = await signedInUser.getIdToken();
       if (typeof window !== "undefined") {
-        // Simpan token di Local Storage
-        localStorage.setItem("customToken", customToken);
+        localStorage.setItem("customToken", idToken);
       }
 
+      await fetchUserData(idToken);
       window.location.href = "/compiler";
     } catch (error) {
       const authError = error as Error;
@@ -96,27 +108,8 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     }
   };
 
-  const sendUserDataToServer = async (userData: UserData) => {
-    try {
-      const response = await fetch(`${config.API_URL}/google-login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(userData),
-      });
-
-      if (response.ok) {
-        console.log("Data pengguna berhasil disimpan di server.");
-      } else {
-        console.error("Gagal mengirim data pengguna ke server.");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-    }
-  };
-
   const emailSignIn = async (email: string, password: string) => {
+    console.log("emailSignIn called with email:", JSON.stringify(email), "len:", email.length);
     try {
       const result: UserCredential = await signInWithEmailAndPassword(
         auth,
@@ -125,56 +118,18 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
       );
       const signedInUser = result.user;
       setUser(signedInUser);
-      const customToken = await signedInUser.getIdToken();
-      // Panggil handleLoginSuccess di sini jika perlu
-      handleLoginSuccess(email, password);
 
+      const idToken = await signedInUser.getIdToken();
       if (typeof window !== "undefined") {
-        // Simpan token di Local Storage
-        localStorage.setItem("customToken", customToken);
+        localStorage.setItem("customToken", idToken);
       }
 
+      await fetchUserData(idToken);
       window.location.href = "/compiler";
     } catch (error) {
       const authError = error as Error;
-      console.error(
-        "Gagal masuk dengan email dan password:",
-        authError.message
-      );
-    }
-  };
-
-  const handleLoginSuccess = async (email: string, password: string) => {
-    try {
-      const requestBody = {
-        email: email,
-        password: password,
-      };
-
-      // Kirim permintaan ke endpoint di server
-      const response = await fetch(`${config.API_URL}/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody), // Menggunakan UID pengguna yang sudah login
-      });
-
-      if (response.ok) {
-        // Tangani respons dari server
-        const data = await response.json();
-        const customToken = data.customToken;
-        // Cek apakah kode sedang dijalankan di sisi klien
-        if (typeof window !== "undefined") {
-          // Simpan token di Local Storage
-          localStorage.setItem("customToken", customToken);
-        }
-      } else {
-        // Tangani kesalahan jika ada
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      // Tangani kesalahan jaringan jika diperlukan
+      console.error("Gagal masuk:", authError.message);
+      throw error;
     }
   };
 
@@ -182,6 +137,11 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     try {
       await signOut(auth);
       setUser(null);
+      setUserData(null);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("customToken");
+        localStorage.removeItem("userData");
+      }
       window.location.href = "/signin";
     } catch (error) {
       const authError = error as Error;
@@ -190,13 +150,23 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        const idToken = await currentUser.getIdToken();
+        const stored = typeof window !== "undefined" ? localStorage.getItem("userData") : null;
+        if (stored) {
+          setUserData(JSON.parse(stored));
+        } else {
+          await fetchUserData(idToken);
+        }
+      } else {
+        setUserData(null);
+      }
     });
 
-    // Fungsi untuk logout otomatis setelah waktu tertentu
     const autoLogoutTimeout = setTimeout(() => {
-      logOut(); // Panggil fungsi logout
+      logOut();
     }, AUTO_LOGOUT_TIME);
 
     return () => {
@@ -206,7 +176,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, googleSignIn, emailSignIn, logOut }}>
+    <AuthContext.Provider value={{ user, userData, googleSignIn, emailSignIn, register, logOut }}>
       {children}
     </AuthContext.Provider>
   );

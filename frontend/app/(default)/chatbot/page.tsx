@@ -1,11 +1,8 @@
 "use client";
 import React, { useState, useEffect, FormEvent, useRef } from "react";
-import axios from "axios";
-import { auth } from "@/app/firebase";
+import { auth } from "@/lib/firebase";
 import { UserAuth } from "@/app/context/authContext";
-import SendIcon from "@mui/icons-material/Send";
-import Box from "@mui/material/Box";
-import config from "@/config.js";
+import config from "@/lib/config";
 
 interface ChatData {
   id: string;
@@ -46,53 +43,8 @@ const ChatBot = () => {
   };
 
   const fetchChatData = async () => {
-    try {
-      const storedToken = localStorage.getItem("customToken");
-      if (user) {
-        const userId = user.uid;
-        console.log(user);
-        // Fetch data dari endpoint berdasarkan userId
-        const response = await fetch(
-          `${config.API_URL}/api/chatbot/chats/${userId}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${storedToken}`,
-            },
-          }
-        );
-
-        const chatData = await response.json();
-        console.log(chatData);
-
-        const sortedChatData = chatData
-          .sort(
-            (
-              a: { timestamp: { _seconds: number; _nanoseconds: number } },
-              b: { timestamp: { _seconds: number; _nanoseconds: number } }
-            ) => {
-              const dateA = new Date(
-                a.timestamp._seconds * 1000 + a.timestamp._nanoseconds / 1000000
-              ).getTime();
-              const dateB = new Date(
-                b.timestamp._seconds * 1000 + b.timestamp._nanoseconds / 1000000
-              ).getTime();
-              return dateB - dateA; // Mengurangkan dateB dengan dateA
-            }
-          )
-          .reverse(); // Memanggil reverse() setelah sorting
-
-        setChatData(sortedChatData);
-      }
-    } catch (error) {
-      console.error("Error fetching chat data:", error);
-    }
-  };
-
-  const refreshChatbotData = async () => {
-    await fetchChatData();
-    setChatData((prevChatbotData) => [...prevChatbotData]);
+    // Chat is stateless — no server-side history. Start empty.
+    setChatData([]);
   };
 
   const handleChatSubmit = async (e: FormEvent) => {
@@ -105,21 +57,25 @@ const ChatBot = () => {
     const userId = user?.uid;
     console.log(userId);
 
-    // Panggil API untuk menyimpan pertanyaan dan respons
     const response = await fetch(`${config.API_URL}/api/chatbot/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${storedToken}`,
       },
-      body: JSON.stringify({ userId, userMessage }),
+      body: JSON.stringify({ userMessage }),
     });
 
     const data = await response.json();
-    console.log(data);
 
-    // Refresh data chatbot setelah submit berhasil
-    await refreshChatbotData();
+    const newChat = {
+      id: Date.now().toString(),
+      userId: userId || "",
+      message: userMessage,
+      response: data.response || "Maaf, tidak ada respons.",
+      timestamp: { _seconds: Math.floor(Date.now() / 1000), _nanoseconds: 0 },
+    };
+    setChatData((prev) => [...prev, newChat]);
     setLoading(false);
 
     setUserMessage("");

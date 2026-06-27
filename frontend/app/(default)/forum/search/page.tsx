@@ -6,9 +6,9 @@ import TimeAgo from "react-timeago";
 import { BiCommentDetail, BiLink } from "react-icons/bi";
 import LikeButton from "@/components/LikeButton";
 import Bookmark from "@/components/Bookmark";
-import { ToastContainer, toast } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import { MdVerified } from "react-icons/md";
-import config from "@/config.js";
+import config from "@/lib/config";
 
 interface ForumData {
   id: string;

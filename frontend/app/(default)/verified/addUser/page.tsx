@@ -1,88 +1,47 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect } from "react";
-import {
-  auth,
-  db,
-  createUserWithEmailAndPassword,
-  updateProfile,
-  setDoc,
-  doc,
-} from "@/app/firebase";
+import { useState } from "react";
+import config from "@/lib/config";
 
 export default function Page() {
   const [userData, setUserData] = useState({
     nama: "",
-    nim: "",
+    email: "",
     password: "",
-    foto: "https://lh3.googleusercontent.com/a/ACg8ocKAuEkaBrnfZeyNP1l1D4sv2XIrFOrOa5isqAvi8-93=s96-c",
   });
   const [loading, setLoading] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [useDefaultPassword, setUseDefaultPassword] = useState(false);
-
-  useEffect(() => {
-    if (modalOpen) {
-      const timer = setTimeout(() => setModalOpen(false), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [modalOpen]);
+  const [message, setMessage] = useState("");
 
   const handleChange = (e: any) => {
     setUserData({ ...userData, [e.target.name]: e.target.value });
   };
 
-  const handlePasswordToggle = () => {
-    setShowPassword(!showPassword);
-  };
-
-  const handleDefaultPassword = () => {
-    setUseDefaultPassword(!useDefaultPassword);
-    setUserData({
-      ...userData,
-      password: useDefaultPassword ? "" : userData.nim,
-    });
-  };
-
   const handleSubmit = async (event: any) => {
     event.preventDefault();
     setLoading(true);
-
-    const uid = `user_${userData.nim}`;
-    const emailAuth = `${userData.nim}@example.com`;
+    setMessage("");
 
     try {
-      // Buat user di Firebase Authentication
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        emailAuth,
-        userData.password
-      );
-
-      // Update profile user
-      await updateProfile(userCredential.user, {
-        displayName: userData.nama,
-        photoURL: userData.foto,
+      const res = await fetch(`${config.API_URL}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: userData.email,
+          password: userData.password,
+          displayName: userData.nama,
+        }),
       });
 
-      // Simpan data ke Firestore
-      await setDoc(doc(db, "users", uid), {
-        displayName: userData.nama,
-        nim: userData.nim,
-        email: emailAuth,
-        photoURL: userData.foto,
-        score: 0,
-        role: "user",
-      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Gagal menambahkan user");
+      }
 
-      setModalOpen(true);
-      setUserData({ nama: "", nim: "", password: "", foto: "" });
-      setUseDefaultPassword(false);
+      setMessage("User berhasil ditambahkan!");
+      setUserData({ nama: "", email: "", password: "" });
     } catch (error: any) {
-      console.error("Gagal menambahkan user:", error);
-      alert("Error: " + error.message);
+      setMessage("Error: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -97,10 +56,7 @@ export default function Page() {
         <form className="py-6 px-9" onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 md:gap-5">
             <div className="mb-5">
-              <label
-                htmlFor="nama"
-                className="block mb-3 text-base font-medium text-black"
-              >
+              <label htmlFor="nama" className="block mb-3 text-base font-medium text-black">
                 Nama User
               </label>
               <input
@@ -115,66 +71,41 @@ export default function Page() {
               />
             </div>
             <div className="mb-5">
-              <label
-                htmlFor="nim"
-                className="block mb-3 text-base font-medium text-black"
-              >
-                NIM User
+              <label htmlFor="email" className="block mb-3 text-base font-medium text-black">
+                Email User
               </label>
               <input
-                type="text"
-                name="nim"
-                id="nim"
-                value={userData.nim}
+                type="email"
+                name="email"
+                id="email"
+                value={userData.email}
                 onChange={handleChange}
                 required
-                placeholder="Masukkan NIM user"
+                placeholder="Masukkan email user"
                 className="w-full rounded-md border border-[#e0e0e0] py-3 px-6 text-base text-[#6B7280] outline-none focus:border-[#00726B] focus:shadow-md"
               />
             </div>
           </div>
-          <div className="relative mb-5">
-            <label
-              htmlFor="password"
-              className="block mb-3 text-base font-medium text-black"
-            >
+          <div className="mb-5">
+            <label htmlFor="password" className="block mb-3 text-base font-medium text-black">
               Password User
             </label>
-            <div className="flex items-center">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                id="password"
-                value={userData.password}
-                onChange={handleChange}
-                required
-                placeholder="Masukkan password user"
-                className="w-full rounded-md border border-[#e0e0e0] py-3 px-6 text-base text-[#6B7280] outline-none focus:border-[#00726B] focus:shadow-md"
-              />
-              <button
-                type="button"
-                onClick={handlePasswordToggle}
-                className="ml-3 text-gray-500"
-              >
-                {showPassword ? "Hide" : "Show"}
-              </button>
-            </div>
-            <div className="flex items-center mt-2">
-              <input
-                type="checkbox"
-                id="defaultPassword"
-                checked={useDefaultPassword}
-                onChange={handleDefaultPassword}
-                className="mr-2"
-              />
-              <label
-                htmlFor="defaultPassword"
-                className="text-sm text-gray-600"
-              >
-                Gunakan NIM sebagai password
-              </label>
-            </div>
+            <input
+              type="password"
+              name="password"
+              id="password"
+              value={userData.password}
+              onChange={handleChange}
+              required
+              placeholder="Masukkan password user"
+              className="w-full rounded-md border border-[#e0e0e0] py-3 px-6 text-base text-[#6B7280] outline-none focus:border-[#00726B] focus:shadow-md"
+            />
           </div>
+          {message && (
+            <p className={`mb-4 text-sm ${message.startsWith("Error") ? "text-red-500" : "text-green-600"}`}>
+              {message}
+            </p>
+          )}
           <div>
             <button
               type="submit"

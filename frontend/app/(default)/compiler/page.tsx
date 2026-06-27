@@ -3,7 +3,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import CodeEditorWindow from "@/components/compiler/CodeEditorWindows";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import config from "@/config.js";
+import config from "@/lib/config";
 
 const CodeEditor = () => {
   useEffect(() => {

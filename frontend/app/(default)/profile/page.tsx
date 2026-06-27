@@ -20,7 +20,7 @@ import Image from "next/image";
 import Pagination from "@/components/Pagination";
 import { MdVerified } from "react-icons/md";
 import StarRating from "@/components/StarRating";
-import config from "@/config.js";
+import config from "@/lib/config";
 import LinkButton from "@/components/LinkButton";
 
 interface ForumData {

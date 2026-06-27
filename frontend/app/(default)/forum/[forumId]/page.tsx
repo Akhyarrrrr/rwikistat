@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import axios from "axios";
-import { auth } from "@/app/firebase";
+import { auth } from "@/lib/firebase";
 import { usePathname } from "next/navigation";
 import Spinner from "@/components/Spinner";
 import Image from "next/image";
@@ -12,7 +12,7 @@ import { BiCommentDetail, BiBookmark } from "react-icons/bi";
 import LikeButton from "@/components/LikeButton";
 import { MdVerified } from "react-icons/md";
 import Link from "next/link";
-import config from "@/config.js";
+import config from "@/lib/config";
 import Bookmark from "@/components/Bookmark";
 
 export default function DetailPage() {

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { auth } from "../app/firebase";
+import { auth } from "@/lib/firebase";
 import { BiSolidLike, BiLike } from "react-icons/bi";
-import config from "@/config.js";
-import { on } from "events";
+import config from "@/lib/config";
 
 const LikeButton: React.FC<{ itemId: string }> = ({ itemId }) => {
   const [likedButton, setLikedButton] = React.useState(false);

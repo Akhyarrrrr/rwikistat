@@ -1,7 +1,19 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import profile from "@/assets/images/profile.png";
-import { usePathname } from "next/navigation";
-import Image from "next/image";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { UserAuth } from "@/app/context/authContext";
 
-export default function page() {}
+export default function UserIdPage() {
+  const { user } = UserAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (user) {
+      router.replace(`/userId/${user.uid}`);
+    } else {
+      router.replace("/forum");
+    }
+  }, [user, router]);
+
+  return null;
+}
