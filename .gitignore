@@ -26,11 +26,6 @@ firebase-debug.*.log*
 *.pid
 *.pid.lock
 
-# backend runtime files
-backend/temp/
-backend/uploads/
-backend/shiny_log.txt
-
 # credentials
 **/*firebase-adminsdk*.json
 **/serviceAccount*.json
@@ -49,15 +44,16 @@ backend/shiny_log.txt
 # Firebase project binding
 backend/.firebaserc
 
-# seed data that may contain real users
-backend/seed/*.csv
-backend/seed/*.xlsx
-
 # OS/editor
 .DS_Store
 *.tsbuildinfo
 *.orig.*
 
+# AI tooling
 .claude/
+AGENTS.md
+
+# runtime artifacts (generated at runtime, not committed)
 backend/server.err
 backend/shiny.js
+backend/shiny_log.txt
