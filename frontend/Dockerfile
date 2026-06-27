@@ -1,30 +1,40 @@
-# Gunakan image Node.js yang sesuai dengan versi Next.js Anda
-FROM node:16-alpine AS builder
+FROM node:18-alpine AS builder
 
-# Buat direktori kerja di dalam container
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_FIREBASE_API_KEY
+ENV NEXT_PUBLIC_FIREBASE_API_KEY=$NEXT_PUBLIC_FIREBASE_API_KEY
+ARG NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+ENV NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+ARG NEXT_PUBLIC_FIREBASE_PROJECT_ID
+ENV NEXT_PUBLIC_FIREBASE_PROJECT_ID=$NEXT_PUBLIC_FIREBASE_PROJECT_ID
+ARG NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+ENV NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=$NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+ARG NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+ENV NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=$NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+ARG NEXT_PUBLIC_FIREBASE_APP_ID
+ENV NEXT_PUBLIC_FIREBASE_APP_ID=$NEXT_PUBLIC_FIREBASE_APP_ID
+
 WORKDIR /app
 
-# Salin package.json dan package-lock.json terlebih dahulu untuk memanfaatkan cache build layer
-COPY package*.json ./
+COPY package.json package-lock.json ./
+RUN npm ci
 
-# Install dependency proyek
-RUN npm install
-
-# Salin seluruh kode proyek
 COPY . .
-
-# Build aplikasi Next.js
 RUN npm run build
 
-# Gunakan image Nginx untuk menjalankan aplikasi yang telah di-build
-FROM nginx:1.23-alpine
+FROM node:18-alpine AS runner
 
-# Salin file build ke direktori nginx
-COPY --from=builder /app/.next /usr/share/nginx/html
+WORKDIR /app
 
-# Salin file konfigurasi nginx (jika ada)
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+ENV NODE_ENV=production
 
-# Jalankan Nginx
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/next.config.js ./next.config.js
+
+EXPOSE 3000
+
+CMD ["npx", "next", "start", "-p", "3000"]

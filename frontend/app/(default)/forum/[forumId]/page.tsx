@@ -14,7 +14,6 @@ import { MdVerified } from "react-icons/md";
 import Link from "next/link";
 import config from "@/config.js";
 import Bookmark from "@/components/Bookmark";
-import { getFirebaseIdTokenHeaders } from "@/lib/authHeaders";
 
 export default function DetailPage() {
   useEffect(() => {
@@ -36,7 +35,13 @@ export default function DetailPage() {
 
   useEffect(() => {
     if (forumId) {
-      const headers = getFirebaseIdTokenHeaders();
+      // Mendapatkan token dari localStorage atau sumber lainnya
+      const storedToken = localStorage.getItem("customToken");
+
+      // Membuat header dengan menyertakan token
+      const headers = {
+        Authorization: `Bearer ${storedToken}`,
+      };
       // Lakukan permintaan ke API untuk mendapatkan data detail modul berdasarkan ID
       fetch(`${config.API_URL}/api/forum/${forumId}`, { headers })
         .then((response) => {
@@ -113,7 +118,13 @@ export default function DetailPage() {
         console.error("Pengguna belum terotentikasi atau belum masuk.");
         return;
       }
-      const headers = getFirebaseIdTokenHeaders();
+      // Mendapatkan token dari localStorage atau sumber lainnya
+      const storedToken = localStorage.getItem("customToken");
+
+      // Membuat header dengan menyertakan token
+      const headers = {
+        Authorization: `Bearer ${storedToken}`,
+      };
 
       // Kirim komentar ke endpoint Express dengan ID pengguna yang aktif
       const response = await axios.post(
@@ -148,7 +159,7 @@ export default function DetailPage() {
     <div className="p-4 w-full md:w-3/4 items-center justify-center mx-auto font-poppins">
       {detailForum ? (
         <div className="items-start px-4 py-6 my-5 shadow-md rounded-lg border font-poppins">
-          <Link href={`/userId/${detailForum.data.uid}`}>
+          <Link href={`/userId`}>
             <div className="flex">
               <div className=" rounded-full mr-2">
                 <Image

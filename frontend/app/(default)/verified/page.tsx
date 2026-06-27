@@ -17,7 +17,6 @@ import { MdVerified } from "react-icons/md";
 import VeriviedCard from "@/components/VeriviedCard";
 import AvatarTest from "@/public/avatar-test.png";
 import config from "@/config.js";
-import { getFirebaseIdTokenHeaders } from "@/lib/authHeaders";
 
 function Verivied() {
   // Buat sebuah jenis yang mencerminkan struktur data dari API
@@ -42,11 +41,19 @@ function Verivied() {
 
   const fetchData = async () => {
     try {
+      // Mendapatkan token dari localStorage atau sumber lainnya
+      const storedToken = localStorage.getItem("customToken");
+
+      // Membuat header dengan menyertakan token
+      const headers = {
+        Authorization: `Bearer ${storedToken}`,
+      };
       const response = await axios.get(`${config.API_URL}/api/user/`, {
-        headers: getFirebaseIdTokenHeaders(),
+        headers,
       });
       if (response.status === 200) {
         setTestData(response.data);
+        console.log(response.data);
       } else {
         console.error("Gagal mengambil data:", response.statusText);
       }

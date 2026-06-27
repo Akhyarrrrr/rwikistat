@@ -57,3 +57,7 @@ backend/seed/*.xlsx
 .DS_Store
 *.tsbuildinfo
 *.orig.*
+
+.claude/
+backend/server.err
+backend/shiny.js

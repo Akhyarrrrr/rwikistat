@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { UserAuth } from "@/app/context/authContext";
 import Spinner from "@/components/Spinner";
 import axios from "axios";
@@ -22,7 +22,6 @@ import { MdVerified } from "react-icons/md";
 import StarRating from "@/components/StarRating";
 import config from "@/config.js";
 import LinkButton from "@/components/LinkButton";
-import { getFirebaseIdTokenHeaders } from "@/lib/authHeaders";
 
 interface ForumData {
   id: string;
@@ -79,14 +78,22 @@ const Page = () => {
     checkUser();
   }, [user]);
 
-  const fetchScore = useCallback(async () => {
+  const fetchScore = async () => {
     try {
+      // Mendapatkan token dari localStorage atau sumber lainnya
+      const storedToken = localStorage.getItem("customToken");
+
+      // Membuat header dengan menyertakan token
+      const headers = {
+        Authorization: `Bearer ${storedToken}`,
+      };
+
       if (user) {
         const uid = user.uid;
         // Mengirim request ke API
         const response = await axios.get(
           `${config.API_URL}/api/user/${uid}/score`,
-          { headers: getFirebaseIdTokenHeaders() }
+          { headers }
         );
 
         // Mengubah state dengan data yang diterima dari API
@@ -95,19 +102,22 @@ const Page = () => {
     } catch (error) {
       console.error("Gagal mengambil data:", error);
     }
-  }, [user]);
+  };
 
   useEffect(() => {
     // Memanggil fetchData untuk mengambil data awal
     fetchScore();
-  }, [fetchScore]);
+  }, [user]);
 
-  const fetchUser = useCallback(async () => {
+  const fetchUser = async () => {
     if (user) {
       const id = user.uid;
+      const storedToken = localStorage.getItem("customToken");
       // Lakukan permintaan ke API untuk mendapatkan data detail modul berdasarkan ID
       fetch(`${config.API_URL}/api/user/${id}`, {
-        headers: getFirebaseIdTokenHeaders(),
+        headers: {
+          Authorization: `Bearer ${storedToken}`,
+        },
       })
         .then((response) => {
           if (!response.ok) {
@@ -117,25 +127,31 @@ const Page = () => {
         })
         .then((data) => {
           setDetailUser(data); // Menyimpan data detail modul dalam state
+          console.log("datauser", data);
         })
         .catch((error) => {
           console.error("There was an error!", error);
-      });
+        });
     }
-  }, [user]);
+  };
   useEffect(() => {
     // Memanggil fetchData untuk mengambil data awal
     fetchUser();
-  }, [fetchUser]);
+  }, [user]);
 
-  const fetchBookmark = useCallback(async (page: number | undefined) => {
+  const fetchBookmark = async (page: number | undefined) => {
     try {
+      // Mendapatkan token dari localStorage atau sumber lainnya
+      const storedToken = localStorage.getItem("customToken");
+
+      // Membuat header dengan menyertakan token
+      const headers = {
+        Authorization: `Bearer ${storedToken}`,
+      };
       if (user) {
         const uid = user.uid;
         const url = `${config.API_URL}/api/forum/bookmarks/${uid}?page=${page}`;
-        const response = await axios.get(url, {
-          headers: getFirebaseIdTokenHeaders(),
-        });
+        const response = await axios.get(url, { headers });
         if (response.status === 200) {
           const {
             bookmarks,
@@ -157,23 +173,29 @@ const Page = () => {
     } catch (error) {
       console.error("Gagal mengambil data:", error);
     }
-  }, [user]);
+  };
 
   useEffect(() => {
     // Memanggil fetchData untuk mengambil data awal
     fetchBookmark(currentBookmarkPage);
-  }, [currentBookmarkPage, fetchBookmark]);
+  }, [currentBookmarkPage, user]);
 
   const currentBookmarked = bookmarks;
 
-  const fetchPosted = useCallback(async (page: number | undefined) => {
+  const fetchPosted = async (page: number | undefined) => {
     try {
       if (user) {
+        // Mendapatkan token dari localStorage atau sumber lainnya
+        const storedToken = localStorage.getItem("customToken");
+
+        // Membuat header dengan menyertakan token
+        const headers = {
+          Authorization: `Bearer ${storedToken}`,
+        };
+
         const uid = user.uid;
         const url = `${config.API_URL}/api/forum/posted/${uid}?page=${page}`;
-        const response = await axios.get(url, {
-          headers: getFirebaseIdTokenHeaders(),
-        });
+        const response = await axios.get(url, { headers });
         if (response.status === 200) {
           const { forumData, currentPage, totalPages, totalPosts } =
             response.data;
@@ -191,12 +213,12 @@ const Page = () => {
     } catch (error) {
       console.error("Gagal mengambil data:", error);
     }
-  }, [user]);
+  };
 
   useEffect(() => {
     // Memanggil fetchData untuk mengambil data awal
     fetchPosted(currentPage);
-  }, [currentPage, fetchPosted]);
+  }, [currentPage, user]);
 
   const currentPosted = forumData;
   const jumlahCurrentPosted = totalPosts;

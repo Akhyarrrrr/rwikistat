@@ -37,7 +37,7 @@ const LoginForm = () => {
     try {
       await googleSignIn();
     } catch (error) {
-      console.error(error);
+      console.log(error);
     }
   };
 

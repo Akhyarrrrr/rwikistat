@@ -110,7 +110,7 @@ export default function MiniDrawer() {
     try {
       await logOut();
     } catch (error) {
-      console.error(error);
+      console.log(error);
     }
   };
 

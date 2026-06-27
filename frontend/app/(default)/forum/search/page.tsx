@@ -9,7 +9,6 @@ import Bookmark from "@/components/Bookmark";
 import { ToastContainer, toast } from "react-toastify";
 import { MdVerified } from "react-icons/md";
 import config from "@/config.js";
-import { getFirebaseIdTokenHeaders } from "@/lib/authHeaders";
 
 interface ForumData {
   id: string;
@@ -46,10 +45,18 @@ export default function Search() {
 
   const handleSearch = async () => {
     try {
+      // Mendapatkan token dari localStorage atau sumber lainnya
+      const storedToken = localStorage.getItem("customToken");
+
+      // Membuat header dengan menyertakan token
+      const headers = {
+        Authorization: `Bearer ${storedToken}`,
+      };
+
       setLoading(true);
       const response = await fetch(
         `${config.API_URL}/api/forum/search?query=${query}`,
-        { headers: getFirebaseIdTokenHeaders() }
+        { headers }
       );
       const data = await response.json();
       setResults(data);

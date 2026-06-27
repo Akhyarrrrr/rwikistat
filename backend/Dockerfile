@@ -1,25 +1,15 @@
-FROM node:20.7-alpine
+FROM node:18-bullseye
 
-# Install R, necessary dependencies, and g++
-RUN apk update -U && \
-    apk --no-cache add R R-dev curl-dev libxml2-dev g++
-
-# Set CRAN mirror
-RUN echo 'options(repos = c(CRAN = "https://cran.usk.ac.id/bin/windows/contrib/4.3/"))' > /etc/R/Rprofile.site
-
-# Install R dependencies
-RUN R -e "install.packages('shiny', repos = 'https://cran.usk.ac.id/bin/windows/contrib/4.3/')"
-RUN R -e "install.packages(c('dplyr', 'ggplot2', 'gapminder'), repos = 'https://cran.usk.ac.id/bin/windows/contrib/4.3/')"
+RUN apt-get update && apt-get install -y r-base r-cran-ggplot2 r-cran-lattice && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY package.json .
-
-RUN npm install
+COPY package.json package-lock.json* ./
+RUN npm install --omit=dev
 
 COPY . .
 
-ENV PORT=8080
-EXPOSE $PORT
+EXPOSE 8080
 
-CMD ["npm", "start"]
+CMD ["node", "server.js"]

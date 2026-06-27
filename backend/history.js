@@ -1,17 +1,42 @@
 const express = require("express");
-const { firestore } = require("./adminConfig");
-const { spawn, ChildProcess } = require("child_process");
+const { admin, firestore } = require("./adminConfig");
 const fs = require("fs");
-const { PNG } = require("pngjs");
 const router = express.Router();
 const multer = require("multer");
 const path = require("path");
+
+// Middleware untuk verifikasi token bearer
+const verifyToken = (req, res, next) => {
+  const bearerHeader = req.headers["authorization"];
+
+  if (typeof bearerHeader !== "undefined") {
+    const bearerToken = bearerHeader.split(" ")[1];
+    req.token = bearerToken;
+
+    // Verifikasi token menggunakan Firebase Admin SDK atau metode autentikasi yang sesuai
+    admin
+      .auth()
+      .verifyIdToken(bearerToken)
+      .then((decodedToken) => {
+        req.user = decodedToken;
+        next(); // Lanjutkan ke middleware atau fungsi berikutnya setelah autentikasi
+      })
+      .catch((error) => {
+        console.error("Token tidak valid:", error);
+        res.status(403).json({ error: "Token tidak valid." });
+      });
+  } else {
+    // Jika tidak ada token
+    res.status(403).json({ error: "Akses ditolak. Token tidak ditemukan." });
+  }
+};
 
 // Konfigurasi Multer untuk menangani unggahan file
 const storage = multer.diskStorage({
   destination: "uploads/", // Folder tempat menyimpan file
   filename: (req, file, cb) => {
     const fileName = req.body.fileName || "default"; // Default jika fileName tidak tersedia
+    console.log(req.body.fileName);
     const fileExtension = path.extname(file.originalname); // Mendapatkan ekstensi file asli
     const newFileName = `${fileName}${fileExtension}`;
     cb(null, newFileName); // Nama file yang disimpan di server
@@ -60,6 +85,8 @@ router.post("/", upload.single("image"), async (req, res) => {
       .collection("image")
       .add(imageData);
 
+    // Proses penyimpanan gambar ke database berhasil
+    console.log("Image saved successfully");
     res.status(200).json({ message: "Image saved successfully" });
   } catch (error) {
     console.error("Error saving image:", error);
@@ -104,6 +131,8 @@ router.post("/mobile", async (req, res) => {
         console.error("Error saving image:", err);
         return res.status(500).json({ error: "Internal server error" });
       }
+      console.log("Image saved successfully");
+
       const existingData = await firestore
         .collection("image")
         .where("uid", "==", uid)
@@ -221,6 +250,8 @@ router.post(
         .collection("image")
         .add(imageData);
 
+      // Proses penyimpanan gambar ke database berhasil
+      console.log("Image saved successfully");
       res.status(200).json({ message: "Image saved successfully" });
     } catch (error) {
       console.error("Error saving image:", error);
@@ -300,6 +331,7 @@ router.delete("/delete/:id", async (req, res) => {
         console.error("Error deleting image file:", err);
         return res.status(500).json({ error: "Internal Server Error" });
       }
+      console.log("Image file deleted successfully");
     });
 
     // Kirim respons berhasil

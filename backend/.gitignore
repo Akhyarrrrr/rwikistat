@@ -32,7 +32,7 @@ coverage
 # nyc test coverage
 .nyc_output
 
-# Grunt intermediate storage
+# Grunt intermediate storage (http://gruntjs.com/creating-plugins#storing-task-files)
 .grunt
 
 # Bower dependency directory (https://bower.io/)
@@ -64,24 +64,4 @@ node_modules/
 
 # dotenv environment variables file
 .env
-.env.*
-!.env.example
 
-# generated/runtime files
-temp/
-uploads/
-shiny_log.txt
-
-# credentials
-*firebase-adminsdk*.json
-serviceAccount*.json
-credentials.json
-client?secret*.json
-client_*.plist
-google-services.json
-GoogleService-Info.plist
-.firebaserc
-
-# seed data that may contain real users
-seed/*.csv
-seed/*.xlsx

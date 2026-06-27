@@ -1,5 +1,4 @@
 /** @type {import('next').NextConfig} */
-const path = require("path");
 
 const nextConfig = {
   images: {
@@ -16,18 +15,22 @@ const nextConfig = {
         protocol: "http",
         hostname: "localhost",
       },
+      {
+        protocol: "http",
+        hostname: "api-rwikistat.usk.ac.id",
+      },
+      {
+        protocol: "http",
+        hostname: "rwikistat.my.id",
+      },
+      {
+        protocol: "http",
+        hostname: "backend.rwikistat.my.id",
+      },
     ],
   },
 
   webpack(config) {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      "@firebase/firestore$": path.resolve(
-        __dirname,
-        "node_modules/@firebase/firestore/dist/index.esm2017.js"
-      ),
-    };
-
     config.module.rules.push({
       test: /canvas.node$/,
       use: "raw-loader",

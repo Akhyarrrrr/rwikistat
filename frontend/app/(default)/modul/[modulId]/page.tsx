@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, ChangeEvent, useState } from "react";
+import React, { useEffect, ChangeEvent, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import Spinner from "@/components/Spinner";
 import CodeEditorWindow from "@/components/compiler/CodeEditorWindows";
@@ -10,7 +10,6 @@ import MarkdownPreview from "@uiw/react-markdown-preview";
 import config from "@/config.js";
 import { Button } from "@nextui-org/react";
 import { classnames } from "@/components/compiler/utils/general";
-import { getFirebaseIdTokenHeaders } from "@/lib/authHeaders";
 
 interface ModulData {
   id: number;
@@ -42,7 +41,11 @@ export default function DetailPage() {
   const router = useRouter();
   const [postContent, setPostContent] = useState("");
   const [output, setOutput] = useState("");
-  const [shinyUrl, setShinyUrl] = useState("");
+  const [plotImage, setPlotImage] = useState<string | null>(null);
+  const [shinyUrl, setShinyUrl] = useState<string | null>(null);
+  const [shinySessionId, setShinySessionId] = useState<string | null>(null);
+  const [processing, setProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const language = {
     id: 80,
@@ -57,16 +60,14 @@ export default function DetailPage() {
   const [code, setCode] = useState<string>(defaultCode);
   const pdfUrlWithParams = `${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`;
   const [downloadClicked, setDownloadClicked] = useState(false);
-  const [processing, setProcessing] = useState(null);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [outputType, setOutputType] = useState<string | null>(null);
 
   useEffect(() => {
     if (modulId) {
-      // Lakukan permintaan ke API untuk mendapatkan data detail modul berdasarkan ID
-      fetch(`${config.API_URL}/api/modul/${modulId}`, {
-        headers: getFirebaseIdTokenHeaders(),
-      })
+      const storedToken = localStorage.getItem("customToken");
+      const headers = {
+        Authorization: `Bearer ${storedToken}`,
+      };
+      fetch(`${config.API_URL}/api/modul/${modulId}`, { headers })
         .then((response) => {
           if (!response.ok) {
             throw new Error("Gagal mengambil data detail modul.");
@@ -74,8 +75,8 @@ export default function DetailPage() {
           return response.json();
         })
         .then((data) => {
-          setDetailModul(data); // Menyimpan data detail modul dalam state
-          setPdfUrl(data.data.pdfPath); // Set URL PDF
+          setDetailModul(data);
+          setPdfUrl(data.data.pdfPath);
         })
         .catch((error) => {
           console.error("Gagal mengambil data detail modul:", error);
@@ -94,11 +95,19 @@ export default function DetailPage() {
 
   const fetchData = async () => {
     try {
+      // Mendapatkan token dari localStorage atau sumber lainnya
+      const storedToken = localStorage.getItem("customToken");
+
+      // Membuat header dengan menyertakan token
+      const headers = {
+        Authorization: `Bearer ${storedToken}`,
+      };
       const response = await axios.get(`${config.API_URL}/api/modul`, {
-        headers: getFirebaseIdTokenHeaders(),
+        headers,
       });
       if (response.status === 200) {
         setTestData(response.data);
+        // console.log(response.data);
       } else {
         console.error("Gagal mengambil data:", response.statusText);
       }
@@ -137,47 +146,86 @@ export default function DetailPage() {
       }
     }
   };
+  const [mode, setMode] = useState<"text" | "graph">("text");
+
+  const handleRunString = async () => {
+    try {
+      setProcessing(true);
+      setPlotImage(null);
+      const storedToken = localStorage.getItem("customToken");
+      const response = await fetch(`${config.API_URL}/api/compiler/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${storedToken}`,
+        },
+        body: JSON.stringify({ code }),
+      });
+      const data = await response.text();
+      setOutput(data);
+    } catch (error) {
+      console.error("Error:", error);
+      setOutput("Terjadi kesalahan saat mengirim kode.");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const stopShiny = useCallback(async () => {
+    if (!shinySessionId) return;
+    try {
+      const storedToken = localStorage.getItem("customToken");
+      await fetch(`${config.API_URL}/api/compiler/shiny/stop`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${storedToken}`,
+        },
+        body: JSON.stringify({ sessionId: shinySessionId }),
+      });
+    } catch {}
+    setShinyUrl(null);
+    setShinySessionId(null);
+  }, [shinySessionId]);
+
+  useEffect(() => {
+    return () => { stopShiny(); };
+  }, [stopShiny]);
+
   const handleRunGraph = async () => {
     try {
-      setLoading(true);
-      const response = await fetch(
-        `${config.API_URL}/api/compiler/newshiny-web`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...getFirebaseIdTokenHeaders(),
-          },
-          body: JSON.stringify({
-            code,
-          }),
-        }
-      );
-
-      const responseData = await response.text();
-      if (response.ok) {
-        try {
-          const data = JSON.parse(responseData);
-          if (data.success) {
-            if (data.link) {
-              setShinyUrl(data.link);
-            } else {
-              setOutput("Error: Shiny URL not found in server response.");
-            }
-          } else {
-            setOutput(`Error: ${data.error || "Failed to start Shiny app"}`);
-          }
-        } catch (parseError) {
-          setOutput("Error: Failed to parse JSON response.");
-        }
+      setProcessing(true);
+      setOutput("");
+      setPlotImage(null);
+      setShinyUrl(null);
+      setShinySessionId(null);
+      const storedToken = localStorage.getItem("customToken");
+      const response = await fetch(`${config.API_URL}/api/compiler/graph`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${storedToken}`,
+        },
+        body: JSON.stringify({
+          code,
+          libs: ["library(ggplot2)", "library(lattice)"],
+        }),
+      });
+      const data = await response.json();
+      if (data.type === "shiny") {
+        setShinyUrl(data.url);
+        setShinySessionId(data.sessionId);
       } else {
-        setOutput(`Error: ${responseData || "Failed to start Shiny app"}`);
+        setOutput(data.output || "");
+        if (data.image) {
+          setPlotImage(data.image);
+        }
       }
     } catch (error) {
-      console.error("Error executing R code for Shiny:", error);
-      setOutput("Error: Failed to execute Shiny app. Please try again.");
+      console.error("Error:", error);
+      setOutput("Terjadi kesalahan saat menjalankan kode.");
     } finally {
-      setLoading(false);
+      setProcessing(false);
     }
   };
 
@@ -233,16 +281,32 @@ export default function DetailPage() {
                   <p className="text-red-600 text-sm">{errorMessage}</p>
                 )}
 
+                <select
+                  className="text-center text-[#00726B] font-semibold outline-none rounded-md font-poppins border border-gray-300 p-2"
+                  value={mode}
+                  onChange={async (e) => {
+                    setMode(e.target.value as "text" | "graph");
+                    setOutput("");
+                    setPlotImage(null);
+                    if (e.target.value !== "graph") {
+                      await stopShiny();
+                    }
+                  }}
+                >
+                  <option value="text">R Compiler</option>
+                  <option value="graph">Graph Compiler</option>
+                </select>
+
                 <Button
-                  onClick={handleRunGraph}
-                  disabled={!code}
+                  onClick={mode === "text" ? handleRunString : handleRunGraph}
+                  disabled={!code || processing}
                   value={code}
                   className={classnames(
                     "block w-56 bg-[#00726B] py-2 rounded-lg duration-500 text-white font-semibold md:col-span-1",
                     !code ? "opacity-50" : ""
                   )}
                 >
-                  {processing ? "Processing..." : "Compile"}
+                  {processing ? "Processing..." : "Run"}
                 </Button>
               </div>
             </div>
@@ -258,14 +322,49 @@ export default function DetailPage() {
             </div>
           </div>
 
-          <div className=" flex flex-shrink-0 w-full  flex-col mt-5">
+          <div className="flex flex-col mt-5">
             <h1 className="font-bold text-xl mb-2 text-[#00726B]">Output</h1>
-            <iframe
-              className="w-full h-[700px]"
-              src={shinyUrl}
-              width="100%"
-              height="100%"
-            />
+
+            {mode === "text" && (
+              <div className="w-full h-96 bg-[#1E1E1E] text-green-500 font-normal text-sm overflow-y-auto p-4 rounded-lg">
+                {output}
+              </div>
+            )}
+
+            {mode === "graph" && (
+              <div className="flex flex-col gap-4">
+                {shinyUrl && (
+                  <div className="w-full border border-gray-300 rounded-lg overflow-hidden">
+                    <div className="bg-gray-100 px-4 py-2 text-sm text-gray-600 flex justify-between items-center">
+                      <span>Shiny App running at <a href={shinyUrl} target="_blank" className="text-[#00726B] underline">{shinyUrl}</a></span>
+                      <button
+                        onClick={stopShiny}
+                        className="px-3 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
+                      >
+                        Stop
+                      </button>
+                    </div>
+                    <iframe
+                      src={shinyUrl}
+                      className="w-full h-[600px]"
+                      title="Shiny App"
+                    />
+                  </div>
+                )}
+                {plotImage && (
+                  <img
+                    src={`data:image/png;base64,${plotImage}`}
+                    alt="Plot output"
+                    className="max-w-full border border-gray-300 rounded-lg"
+                  />
+                )}
+                {output && (
+                  <div className="w-full h-48 bg-[#1E1E1E] text-green-500 font-normal text-sm overflow-y-auto p-4 rounded-lg">
+                    {output}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       ) : (

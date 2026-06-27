@@ -1,30 +1,14 @@
 {
-  "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
-    "check": "node --check server.js"
-  },
   "dependencies": {
-    "@babel/preset-react": "^7.25.9",
-    "bcrypt": "^5.1.1",
-    "bcryptjs": "^2.4.3",
+    "@google-cloud/firestore": "^7.0.0",
+    "@google-cloud/storage": "^7.0.0",
     "body-parser": "^1.20.2",
-    "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
-    "crypto": "^1.0.1",
-    "csv-parser": "^3.0.0",
     "detect-port": "^1.5.1",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "firebase-admin": "^12.4.0",
-    "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
-    "openai": "^4.28.4",
-    "pngjs": "^7.0.0",
-    "punycode": "^2.3.1",
-    "r-script": "^0.0.4",
-    "wait-on": "^8.0.1",
-    "xlsx": "^0.18.5",
-    "zlib": "^1.0.5"
+    "wait-on": "^8.0.1"
   }
 }

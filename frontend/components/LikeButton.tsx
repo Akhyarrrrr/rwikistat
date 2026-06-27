@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { auth } from "../app/firebaseConfig";
+import { auth } from "../app/firebase";
 import { BiSolidLike, BiLike } from "react-icons/bi";
 import config from "@/config.js";
-import { getFirebaseIdTokenHeaders } from "@/lib/authHeaders";
+import { on } from "events";
 
 const LikeButton: React.FC<{ itemId: string }> = ({ itemId }) => {
   const [likedButton, setLikedButton] = React.useState(false);
@@ -19,18 +19,27 @@ const LikeButton: React.FC<{ itemId: string }> = ({ itemId }) => {
       const user = auth.currentUser;
       const uid = user?.uid; // Get the user ID from the authentication object
 
+      // Mendapatkan token dari localStorage atau sumber lainnya
+      const storedToken = localStorage.getItem("customToken");
+
+      // Membuat header dengan menyertakan token
+      const headers = {
+        Authorization: `Bearer ${storedToken}`,
+      };
+
       if (user) {
         // Kirim permintaan API untuk mengambil data like
         const response = await axios.get(
           `${config.API_URL}/api/forum/like/${itemId}/is-liked`,
           {
-            headers: getFirebaseIdTokenHeaders(),
+            headers: headers, // Pass headers in the config object
             params: { uid: uid }, // Include email as a query parameter
           }
         );
 
         if (response.status === 200) {
           setLikedButton(response.data.isLiked);
+          // console.log(response.data.isLiked);
           setIsLoading(false);
         }
       } else {
@@ -47,12 +56,20 @@ const LikeButton: React.FC<{ itemId: string }> = ({ itemId }) => {
     try {
       const user = auth.currentUser;
       const uid = user?.uid; // Get the user ID from the authentication object
+      // Mendapatkan token dari localStorage atau sumber lainnya
+      const storedToken = localStorage.getItem("customToken");
+
+      // Membuat header dengan menyertakan token
+      const headers = {
+        Authorization: `Bearer ${storedToken}`,
+      };
+
       if (uid) {
         // Kirim permintaan API untuk menyukai postingan
         const response = await axios.post(
           `${config.API_URL}/api/forum/like/${itemId}`,
           { uid: uid },
-          { headers: getFirebaseIdTokenHeaders() }
+          { headers: headers }
         );
 
         if (response.status === 200) {
@@ -73,12 +90,20 @@ const LikeButton: React.FC<{ itemId: string }> = ({ itemId }) => {
       const user = auth.currentUser;
       const uid = user?.uid; // Get the user ID from the authentication object
 
+      // Mendapatkan token dari localStorage atau sumber lainnya
+      const storedToken = localStorage.getItem("customToken");
+
+      // Membuat header dengan menyertakan token
+      const headers = {
+        Authorization: `Bearer ${storedToken}`,
+      };
+
       if (uid) {
         // Kirim permintaan API untuk membatalkan like postingan
         const response = await axios.post(
           `${config.API_URL}/api/forum/unlike/${itemId}`,
           { uid: uid }, // Include email in the data payload
-          { headers: getFirebaseIdTokenHeaders() }
+          { headers: headers } // Pass headers as the third argument
         );
 
         if (response.status === 200) {

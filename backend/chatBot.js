@@ -2,108 +2,89 @@ const express = require("express");
 const router = express.Router();
 const adminConfig = require("./adminConfig");
 const { firestore, admin } = adminConfig;
-const OpenAI = require("openai");
+const dotenv = require("dotenv");
 
-const openai = process.env.AI_API_KEY
-  ? new OpenAI({ apiKey: process.env.AI_API_KEY })
-  : null;
+dotenv.config();
 
-const threadByUser = {}; // Store thread IDs by user
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_API_URL =
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent";
+
+// In-memory conversation history per user
+const conversationHistory = {};
+
+const SYSTEM_INSTRUCTION =
+  "Kamu adalah seorang ahli statistika dan bahasa pemrograman R. Jawab pertanyaan dengan jelas, ringkas, dan berikan contoh kode R jika relevan.";
 
 router.post("/chat", async (req, res) => {
-  if (!openai || !process.env.AI_ASSISTANT_ID) {
-    return res.status(503).json({ error: "Chatbot belum dikonfigurasi." });
-  }
-
-  const assistantIdToUse = process.env.AI_ASSISTANT_ID;
-  const userId = req.body.userId; // You should include the user ID in the request
+  const userId = req.body.userId;
   const userMessage = req.body.userMessage;
 
   if (!userId || !userMessage) {
     return res
       .status(400)
-      .json({ error: "userId dan userMessage wajib diisi." });
+      .json({ error: "userId dan userMessage harus diisi." });
   }
 
-  // Create a new thread if it's the user's first message
-  if (!threadByUser[userId]) {
-    try {
-      const myThread = await openai.beta.threads.create();
-      threadByUser[userId] = myThread.id; // Store the thread ID for this user
-    } catch (error) {
-      console.error("Error creating thread:", error);
-      res.status(500).json({ error: "Internal server error" });
-      return;
-    }
+  // Initialize conversation history for this user
+  if (!conversationHistory[userId]) {
+    conversationHistory[userId] = [];
   }
 
-  // Add a Message to the Thread
+  // Add user message to history
+  conversationHistory[userId].push({ role: "user", parts: [{ text: userMessage }] });
+
+  // Build contents array: system instruction + conversation history
+  const contents = [
+    { role: "user", parts: [{ text: SYSTEM_INSTRUCTION }] },
+    ...conversationHistory[userId],
+  ];
+
   try {
-    await openai.beta.threads.messages.create(
-      threadByUser[userId], // Use the stored thread ID for this user
-      {
-        role: "user",
-        content: userMessage,
-      }
-    );
+    const geminiRes = await fetch(GEMINI_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-goog-api-key": GEMINI_API_KEY,
+      },
+      body: JSON.stringify({ contents }),
+    });
 
-    // Run the Assistant
-    const myRun = await openai.beta.threads.runs.create(
-      threadByUser[userId], // Use the stored thread ID for this user
-      {
-        assistant_id: assistantIdToUse,
-        instructions:
-          "kamu adalah seorang ahli statistika dan bahasa pemrograman R.", // Your instructions here
-        tools: [
-          { type: "code_interpreter" }, // Code interpreter tool
-          { type: "retrieval" }, // Retrieval tool
-        ],
-      }
-    );
+    if (!geminiRes.ok) {
+      const errText = await geminiRes.text();
+      console.error("Gemini API error:", errText);
+      return res.status(500).json({ error: "Gagal mendapatkan respons dari Gemini." });
+    }
 
-    // Periodically retrieve the Run to check on its status
-    const retrieveRun = async () => {
-      let run = myRun;
+    const geminiData = await geminiRes.json();
+    const responseText =
+      geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "Maaf, tidak ada respons.";
 
-      while (["queued", "in_progress"].includes(run.status)) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        run = await openai.beta.threads.runs.retrieve(
-          threadByUser[userId], // Use the stored thread ID for this user
-          myRun.id
-        );
-      }
+    // Add model response to history
+    conversationHistory[userId].push({
+      role: "model",
+      parts: [{ text: responseText }],
+    });
 
-      if (run.status !== "completed") {
-        throw new Error(`Assistant run ended with status: ${run.status}`);
-      }
-    };
+    // Keep only last 20 messages to avoid context overflow
+    if (conversationHistory[userId].length > 20) {
+      conversationHistory[userId] = conversationHistory[userId].slice(-20);
+    }
 
-    // Retrieve the Messages added by the Assistant to the Thread
-    const waitForAssistantMessage = async () => {
-      await retrieveRun();
+    console.log("User:", userMessage);
+    console.log("Assistant:", responseText);
 
-      const allMessages = await openai.beta.threads.messages.list(
-        threadByUser[userId] // Use the stored thread ID for this user
-      );
+    // Save to Firestore
+    const chatRef = firestore.collection("chats").doc();
+    await chatRef.set({
+      userId,
+      message: userMessage,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      response: responseText,
+    });
 
-      // Send the response back to the front end
-      res.status(200).json({
-        response: allMessages.data[0].content[0].text.value,
-      });
-      const chatRef = firestore.collection("chats").doc();
-
-      // Membuat objek data untuk disimpan ke Firestore
-      const chatData = {
-        userId: userId,
-        message: userMessage,
-        timestamp: admin.firestore.FieldValue.serverTimestamp(), // Menambahkan timestamp
-        response: allMessages.data[0].content[0].text.value,
-      };
-
-      // Menyimpan data ke Firestore
-      await chatRef.set(chatData);
-    };
-    await waitForAssistantMessage();
+    res.status(200).json({ response: responseText });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Internal server error" });

@@ -29,6 +29,32 @@ const upload = multer({
   },
 }).single("pdfFile");
 
+// Middleware untuk verifikasi token bearer
+const verifyToken = (req, res, next) => {
+  const bearerHeader = req.headers["authorization"];
+
+  if (typeof bearerHeader !== "undefined") {
+    const bearerToken = bearerHeader.split(" ")[1];
+    req.token = bearerToken;
+
+    // Verifikasi token menggunakan Firebase Admin SDK atau metode autentikasi yang sesuai
+    admin
+      .auth()
+      .verifyIdToken(bearerToken)
+      .then((decodedToken) => {
+        req.user = decodedToken;
+        next(); // Lanjutkan ke middleware atau fungsi berikutnya setelah autentikasi
+      })
+      .catch((error) => {
+        console.error("Token tidak valid:", error);
+        res.status(403).json({ error: "Token tidak valid." });
+      });
+  } else {
+    // Jika tidak ada token
+    res.status(403).json({ error: "Akses ditolak. Token tidak ditemukan." });
+  }
+};
+
 // Rute untuk mengunggah file PDF
 router.post("/", (req, res) => {
   upload(req, res, async (err) => {
@@ -95,52 +121,12 @@ router.post("/", (req, res) => {
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       };
 
-      await firestore.collection("modul").add(modulData);
+      const modulRef = await firestore.collection("modul").add(modulData);
+
+      console.log("Data modul berhasil ditambahkan dengan ID:", modulRef.id);
       res.json({
         message:
           "File PDF berhasil diunggah dan data modul berhasil ditambahkan.",
-      });
-    } catch (error) {
-      console.error("Gagal menyimpan data modul:", error);
-      res.status(500).json({ error: "Gagal menyimpan data modul." });
-    }
-  });
-});
-
-// Endpoint untuk mengunggah file PDF dan gambar
-router.post("/test", (req, res) => {
-  upload(req, res, async (err) => {
-    if (err instanceof multer.MulterError) {
-      // Terjadi kesalahan saat mengunggah
-      return res.status(400).json({ error: err.message });
-    } else if (err) {
-      // Terjadi kesalahan yang tidak diketahui
-      return res.status(500).json({ error: "Gagal mengunggah file." });
-    }
-
-    try {
-      const folderName = `uploads/${req.body.namaModul}`;
-      const imageUrls = req.files["imageFiles"].map(
-        (image) => `${folderName}/${image.filename}`
-      );
-      const pdfUrl = `${folderName}/${req.files["pdfFile"][0].filename}`;
-
-      // Pastikan folder untuk modul sudah dibuat
-      fs.mkdirSync(folderName, { recursive: true });
-
-      const modulData = {
-        imagePaths: imageUrls,
-        pdfPath: pdfUrl,
-        codeSampel: req.body.codeSampel,
-        judulModul: req.body.judulModul,
-        namaModul: req.body.namaModul,
-        urlShiny: req.body.urlShiny,
-        textData: req.body.textData,
-      };
-
-      await firestore.collection("modul").add(modulData);
-      res.json({
-        message: "File berhasil diunggah dan data modul berhasil ditambahkan.",
       });
     } catch (error) {
       console.error("Gagal menyimpan data modul:", error);

@@ -22,7 +22,6 @@ import Snackbar from "@mui/joy/Snackbar";
 import { Button, Typography } from "@mui/joy";
 import StarIcon from "@mui/icons-material/Star";
 import LinkButton from "@/components/LinkButton";
-import { getFirebaseIdTokenHeaders } from "@/lib/authHeaders";
 
 interface ForumData {
   id: string;
@@ -100,11 +99,17 @@ const ForumComponent: React.FC = () => {
 
   const fetchData = async (page: number | undefined) => {
     try {
+      // Mendapatkan token dari localStorage atau sumber lainnya
+      const storedToken = localStorage.getItem("customToken");
+      console.log(storedToken);
+
+      // Membuat header dengan menyertakan token
+      const headers = {
+        Authorization: `Bearer ${storedToken}`,
+      };
       const url = `${config.API_URL}/api/forum/page?page=${page}`;
 
-      const response = await axios.get(url, {
-        headers: getFirebaseIdTokenHeaders(),
-      });
+      const response = await axios.get(url, { headers });
       if (response.status === 200) {
         const { forumData, currentPage, totalPages } = response.data;
 
@@ -162,11 +167,16 @@ const ForumComponent: React.FC = () => {
       formData.append("topics", newPost.topics);
       formData.append("title", newPost.title);
       if (user) {
+        console.log("user", user.uid);
         formData.append("uid", user?.uid ?? "");
       }
       newPost.images.forEach((image) => {
         formData.append("images", image);
       });
+      console.log("form", formData);
+
+      // Mendapatkan token dari localStorage atau sumber lainnya
+      const storedToken = localStorage.getItem("customToken");
 
       const response = await axios.post(
         `${config.API_URL}/api/forum`,
@@ -174,7 +184,7 @@ const ForumComponent: React.FC = () => {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            ...getFirebaseIdTokenHeaders(),
+            Authorization: `Bearer ${storedToken}`,
           },
         }
       );

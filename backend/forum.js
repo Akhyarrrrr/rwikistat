@@ -3,17 +3,57 @@ const adminConfig = require("./adminConfig");
 const multer = require("multer");
 const router = express.Router();
 const upload = multer();
-const { firestore, storage } = adminConfig;
+const { admin, firestore, storage } = adminConfig;
+
+// Middleware untuk verifikasi token bearer
+const verifyToken = (req, res, next) => {
+  const bearerHeader = req.headers["authorization"];
+
+  if (typeof bearerHeader !== "undefined") {
+    const bearerToken = bearerHeader.split(" ")[1];
+    req.token = bearerToken;
+
+    // Verifikasi token menggunakan Firebase Admin SDK atau metode autentikasi yang sesuai
+    admin
+      .auth()
+      .verifyIdToken(bearerToken)
+      .then((decodedToken) => {
+        req.user = decodedToken;
+        next(); // Lanjutkan ke middleware atau fungsi berikutnya setelah autentikasi
+      })
+      .catch((error) => {
+        console.error("Token tidak valid:", error);
+        res.status(403).json({ error: "Token tidak valid." });
+      });
+  } else {
+    // Jika tidak ada token
+    res.status(403).json({ error: "Akses ditolak. Token tidak ditemukan." });
+  }
+};
 
 // Fungsi untuk menambah skor ke koleksi users
 async function addScoreToUser(uid, scoreToAdd) {
-  if (!uid) return;
-
   const userDocRef = firestore.collection("users").doc(uid);
-  const userDoc = await userDocRef.get();
-  const currentScore = Number(userDoc.data()?.score || 0);
 
-  await userDocRef.set({ score: currentScore + scoreToAdd }, { merge: true });
+  // Ambil data pengguna dari Firestore
+  const userDoc = await userDocRef.get();
+
+  if (!userDoc.exists) {
+    // Buat dokumen user baru jika belum ada
+    await userDocRef.set({
+      score: scoreToAdd,
+      uid: uid,
+      createdAt: new Date(),
+    });
+    return;
+  }
+
+  const userData = userDoc.data();
+
+  // Update skor pengguna di Firestore
+  await userDocRef.update({
+    score: (userData.score || 0) + scoreToAdd,
+  });
 }
 
 // Rute untuk membuat topik baru
@@ -23,12 +63,6 @@ router.post("/", upload.array("images", 3), async (req, res) => {
     const uid = req.body.uid;
     const title = req.body.title;
     const images = req.files;
-
-    if (!uid || !title || !topics) {
-      return res
-        .status(400)
-        .json({ error: "uid, title, dan topics wajib diisi." });
-    }
 
     const topicsData = {
       topics: topics,
@@ -44,30 +78,32 @@ router.post("/", upload.array("images", 3), async (req, res) => {
       .add(topicsData);
     const documentId = firestoreResponse.id;
 
-    // Upload setiap gambar ke Firebase Storage
+    // Upload setiap gambar ke Firebase Storage (jika ada)
     const imageUrls = [];
 
-    for (const image of images) {
-      const bucket = storage.bucket();
-      const fileName = `images/${documentId}/${image.originalname}`;
-      const file = bucket.file(fileName);
+    if (images && images.length > 0) {
+      for (const image of images) {
+        const bucket = storage.bucket();
+        const fileName = `images/${documentId}/${image.originalname}`;
+        const file = bucket.file(fileName);
 
-      // Menyimpan file gambar ke Firebase Storage
-      await file.save(image.buffer, {
-        metadata: {
-          contentType: image.mimetype,
-        },
-      });
+        // Menyimpan file gambar ke Firebase Storage
+        await file.save(image.buffer, {
+          metadata: {
+            contentType: image.mimetype,
+          },
+        });
 
-      // Dapatkan URL publik gambar yang diunggah
-      const options = {
-        version: "v4", // Menggunakan versi API terbaru
-        action: "read", // Aksi "read" memungkinkan akses publik
-        expires: Date.now() + 1000 * 60 * 60 * 24, // URL berlaku selama satu hari (Anda dapat mengatur berapa lama sesuai kebutuhan)
-      };
+        // Dapatkan URL publik gambar yang diunggah
+        const options = {
+          version: "v4",
+          action: "read",
+          expires: Date.now() + 1000 * 60 * 60 * 24,
+        };
 
-      const [url] = await file.getSignedUrl(options);
-      imageUrls.push(url);
+        const [url] = await file.getSignedUrl(options);
+        imageUrls.push(url);
+      }
     }
 
     // Update dokumen Firestore dengan URL gambar
@@ -80,6 +116,7 @@ router.post("/", upload.array("images", 3), async (req, res) => {
     const scoreToAdd = 5; // Atur sesuai aturan skor yang Anda tentukan
     await addScoreToUser(uid, scoreToAdd);
 
+    console.log("Data berhasil ditambahkan dengan ID:", documentId);
     res.json({ message: "Data berhasil ditambahkan." });
   } catch (error) {
     console.error("Gagal menambahkan data:", error);
@@ -143,22 +180,26 @@ router.get("/page/", async (req, res) => {
     const snapshot = await firestore
       .collection("forum")
       .orderBy("createdAt", "desc")
-      .limit(itemsPerPage)
+      // .limit(itemsPerPage)
       .offset(startIndex)
       .get();
 
     const forumDataPromises = snapshot.docs.map(async (doc) => {
-      // Panggil endpoint untuk mendapatkan data user berdasarkan userId
       const userSnapshot = await firestore
         .collection("users")
         .doc(doc.data().uid)
         .get();
-      const user = userSnapshot.data();
+      const user = userSnapshot.data() || {};
 
       return {
         id: doc.id,
         data: doc.data(),
-        user: user,
+        user: {
+          uid: user.uid || doc.data().uid,
+          displayName: user.displayName || "Pengguna",
+          photoURL: user.photoURL || "",
+          verified: user.verified || false,
+        },
       };
     });
 
@@ -166,7 +207,7 @@ router.get("/page/", async (req, res) => {
 
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-    const paginatedData = forumData.slice(0, itemsPerPage); // Mengambil 5 item pertama
+    const paginatedData = forumData.slice(0, itemsPerPage);
 
     res.json({
       forumData: paginatedData,
@@ -193,17 +234,21 @@ router.get("/", async (req, res) => {
       .get();
 
     const forumDataPromises = snapshot.docs.map(async (doc) => {
-      // Panggil endpoint untuk mendapatkan data user berdasarkan userId
       const userSnapshot = await firestore
         .collection("users")
         .doc(doc.data().uid)
         .get();
-      const user = userSnapshot.data();
+      const user = userSnapshot.data() || {};
 
       return {
         id: doc.id,
         data: doc.data(),
-        user: user,
+        user: {
+          uid: user.uid || doc.data().uid,
+          displayName: user.displayName || "Pengguna",
+          photoURL: user.photoURL || "",
+          verified: user.verified || false,
+        },
       };
     });
 
@@ -258,17 +303,21 @@ router.get("/:id", async (req, res) => {
       const forumData = forumDoc.data();
       const commentCount = await getCommentCount(forumId);
 
-      // Panggil endpoint untuk mendapatkan data user berdasarkan userId
       const userSnapshot = await firestore
         .collection("users")
         .doc(forumData.uid)
         .get();
-      const user = userSnapshot.data();
+      const user = userSnapshot.data() || {};
 
       res.json({
         id: forumDoc.id,
         data: forumData,
-        user: user,
+        user: {
+          uid: user.uid || forumData.uid,
+          displayName: user.displayName || "Pengguna",
+          photoURL: user.photoURL || "",
+          verified: user.verified || false,
+        },
         commentCount: commentCount,
       });
     } else {
@@ -286,9 +335,7 @@ router.post("/:topicId/comments", async (req, res) => {
     const { topicId } = req.params;
     const { text, uid } = req.body;
 
-    if (!uid || !text) {
-      return res.status(400).json({ error: "uid dan text wajib diisi." });
-    }
+    // Validasi input (pastikan text tidak kosong, userId valid, dll.)
 
     // Data komentar yang akan ditambahkan
     const commentData = {
@@ -305,6 +352,7 @@ router.post("/:topicId/comments", async (req, res) => {
     const scoreToAdd = 10; // Atur sesuai aturan skor yang Anda tentukan
     await addScoreToUser(uid, scoreToAdd);
 
+    console.log("Komentar berhasil ditambahkan.");
     res.json({ message: "Komentar berhasil ditambahkan." });
   } catch (error) {
     console.error("Gagal menambahkan komentar:", error);
@@ -355,10 +403,6 @@ router.post("/like/:id", async (req, res) => {
   const forumId = req.params.id;
   const uid = req.body.uid; // Ambil ID pengguna yang sudah masuk
 
-  if (!uid) {
-    return res.status(400).json({ error: "uid wajib diisi." });
-  }
-
   try {
     // Dapatkan dokumen postingan berdasarkan ID
     const forumDocRef = firestore.collection("forum").doc(forumId);
@@ -398,10 +442,6 @@ router.post("/like/:id", async (req, res) => {
 router.post("/unlike/:id", async (req, res) => {
   const forumId = req.params.id;
   const uid = req.body.uid; // Ambil ID pengguna yang sudah masuk
-
-  if (!uid) {
-    return res.status(400).json({ error: "uid wajib diisi." });
-  }
 
   try {
     // Dapatkan dokumen postingan berdasarkan ID
@@ -487,10 +527,6 @@ router.post("/bookmark/:id", async (req, res) => {
   const forumId = req.params.id;
   const uid = req.body.uid; // Ambil ID pengguna yang sudah masuk
 
-  if (!uid) {
-    return res.status(400).json({ error: "uid wajib diisi." });
-  }
-
   try {
     // Dapatkan dokumen postingan berdasarkan ID
     const forumDocRef = firestore.collection("forum").doc(forumId);
@@ -529,10 +565,6 @@ router.post("/bookmark/:id", async (req, res) => {
 router.post("/unbookmark/:id", async (req, res) => {
   const forumId = req.params.id;
   const uid = req.body.uid; // Ambil ID pengguna yang sudah masuk
-
-  if (!uid) {
-    return res.status(400).json({ error: "uid wajib diisi." });
-  }
 
   try {
     // Dapatkan dokumen postingan berdasarkan ID
@@ -632,7 +664,7 @@ router.get("/bookmarks/:uid", async (req, res) => {
 
     const snapshot = await query
       // .orderBy('createdAt', 'desc')
-      .limit(itemsPerPage)
+      // .limit(itemsPerPage)
       .offset(startIndex)
       .get();
 
@@ -773,7 +805,7 @@ router.get("/posted/:uid", async (req, res) => {
 
     const snapshot = await query
       // .orderBy('createdAt', 'desc')
-      .limit(itemsPerPage)
+      // .limit(itemsPerPage)
       .offset(startIndex)
       .get();
 

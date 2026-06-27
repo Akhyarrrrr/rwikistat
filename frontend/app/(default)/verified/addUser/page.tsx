@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import { useState, useEffect } from "react";
 import {
@@ -8,7 +9,7 @@ import {
   updateProfile,
   setDoc,
   doc,
-} from "@/firebase.config";
+} from "@/app/firebase";
 
 export default function Page() {
   const [userData, setUserData] = useState({
