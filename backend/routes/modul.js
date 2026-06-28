@@ -25,13 +25,13 @@ router.post("/", verifyToken, (req, res) => {
         return res.status(400).json({ error: "File PDF tidak ditemukan." });
       }
       const { codeSampel, namaModul, judulModul, urlShiny, textData, textMarkdown } = req.body;
-      const uniqueFileName = `${Date.now()}_${Math.random().toString(36).substring(2)}_${req.file.originalname}`;
-      const file = storage.bucket().file(`modul/${uniqueFileName}`);
+      const gcsPath = `modul/${Date.now()}_${Math.random().toString(36).substring(2)}_${req.file.originalname}`;
+      const file = storage.bucket().file(gcsPath);
       await file.save(req.file.buffer, { metadata: { contentType: req.file.mimetype } });
       const options = { version: "v4", action: "read", expires: Date.now() + 7 * 24 * 60 * 60 * 1000 };
       const [publicUrl] = await file.getSignedUrl(options);
       const modulRef = await firestore.collection("modul").add({
-        pdfPath: publicUrl, codeSampel, judulModul, namaModul, urlShiny, textData, textMarkdown,
+        pdfPath: publicUrl, gcsPath, codeSampel, judulModul, namaModul, urlShiny, textData, textMarkdown,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
       console.log("Data modul berhasil ditambahkan dengan ID:", modulRef.id);
@@ -72,6 +72,12 @@ router.get("/:id", verifyToken, async (req, res) => {
 
 router.delete("/:id", verifyToken, async (req, res) => {
   try {
+    const doc = await firestore.collection("modul").doc(req.params.id).get();
+    if (!doc.exists) return res.status(404).json({ error: "Data tidak ditemukan." });
+    const { gcsPath } = doc.data();
+    if (gcsPath) {
+      try { await storage.bucket().file(gcsPath).delete(); } catch {}
+    }
     await firestore.collection("modul").doc(req.params.id).delete();
     res.json({ message: "Data berhasil dihapus." });
   } catch (error) {

@@ -1,5 +1,5 @@
 const express = require("express");
-const { spawn, execSync } = require("child_process");
+const { spawn } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
@@ -32,7 +32,7 @@ function killShinySession(sessionId) {
     }
   } catch {}
   if (s.rFilePath && fs.existsSync(s.rFilePath)) {
-    try { fs.unlinkSync(s.rFilePath); } catch {}
+    try { fs.rmSync(s.rFilePath, { recursive: true, force: true }); } catch {}
   }
   if (s.tempPngPath && fs.existsSync(s.tempPngPath)) {
     try { fs.unlinkSync(s.tempPngPath); } catch {}
@@ -101,69 +101,36 @@ router.post("/graph", async (req, res) => {
   }
 });
 
+let nextPort = 7000;
+const MAX_PORT = 7999;
+
+function getNextPort() {
+  const port = nextPort;
+  nextPort = port >= MAX_PORT ? 7000 : port + 1;
+  return port;
+}
+
 async function handleShinyCode(code, res) {
-  for (const [id, _] of Object.entries(shinySessions)) {
-    killShinySession(id);
-  }
-  await new Promise((r) => setTimeout(r, 500));
-  const SHINY_PORT = 7000;
   const sessionId = Math.random().toString(36).substring(7);
-  const rFilePath = path.join(TEMP_DIR, `shiny_${sessionId}.R`);
-  let modifiedCode;
-  if (code.includes("shinyApp(")) {
-    const injectShinyApp = `options = list(port = ${SHINY_PORT}, host = "0.0.0.0", launch.browser = FALSE)`;
-    modifiedCode = code.replace(/shinyApp\s*\(/, `shinyApp(${injectShinyApp}, `);
-  } else {
-    modifiedCode = code.replace(/runApp\s*\(/, `runApp(port = ${SHINY_PORT}, host = "0.0.0.0", launch.browser = FALSE, `);
+  const port = getNextPort();
+  const appDir = path.join(TEMP_DIR, `shiny_${sessionId}`);
+  fs.mkdirSync(appDir, { recursive: true });
+  fs.writeFileSync(path.join(appDir, "app.R"), code);
+  const child = spawn("Rscript", [
+    "-e",
+    `shiny::runApp("${appDir.replace(/\\/g, "/")}", port = ${port}, host = "127.0.0.1", launch.browser = FALSE)`,
+  ], { stdio: ["ignore", "pipe", "pipe"] });
+  shinySessions[sessionId] = { pid: child.pid, port, createdAt: Date.now(), rFilePath: appDir };
+  let outputBuf = "";
+  child.stdout.on("data", (d) => { outputBuf += d.toString(); });
+  child.stderr.on("data", (d) => { outputBuf += d.toString(); });
+  // Wait 3s for Shiny to boot, then check if it's still alive
+  await new Promise((r) => setTimeout(r, 3000));
+  if (child.exitCode !== null) {
+    killShinySession(sessionId);
+    return res.json({ output: outputBuf || `Shiny gagal start (exit code ${child.exitCode}). Periksa kode Anda.`, image: null });
   }
-  fs.writeFileSync(rFilePath, modifiedCode);
-  const child = spawn("Rscript", [rFilePath], { stdio: ["ignore", "pipe", "pipe"] });
-  shinySessions[sessionId] = { pid: child.pid, port: SHINY_PORT, createdAt: Date.now(), rFilePath };
-  let resolved = false;
-  const timeout = setTimeout(() => {
-    if (!resolved) {
-      resolved = true;
-      killShinySession(sessionId);
-      res.json({ output: "Shiny app timed out (15s). Periksa kode Anda.", image: null });
-    }
-  }, 15000);
-  let stderrBuf = "";
-  const onOutput = (text) => {
-    if (resolved) return;
-    const match = text.match(/Listening on\s+http[s]?:\/\/([^:]+):(\d+)/i);
-    if (match) {
-      const host = match[1];
-      const actualPort = match[2];
-      resolved = true;
-      clearTimeout(timeout);
-      shinySessions[sessionId].port = Number(actualPort);
-      res.json({ type: "shiny", url: `http://${host}:${actualPort}`, port: Number(actualPort), sessionId });
-    } else if (/listening on/i.test(text)) {
-      resolved = true;
-      clearTimeout(timeout);
-      res.json({ type: "shiny", url: `http://localhost:${SHINY_PORT}`, port: SHINY_PORT, sessionId });
-    }
-  };
-  child.stdout.on("data", (data) => onOutput(data.toString()));
-  child.stderr.on("data", (data) => {
-    stderrBuf += data.toString();
-    onOutput(data.toString());
-  });
-  child.on("error", (err) => {
-    if (!resolved) {
-      resolved = true;
-      clearTimeout(timeout);
-      res.json({ output: `Gagal start: ${err.message}`, image: null });
-    }
-  });
-  child.on("exit", (code) => {
-    if (!resolved) {
-      resolved = true;
-      clearTimeout(timeout);
-      res.json({ output: stderrBuf || `Proses selesai dengan kode ${code}`, image: null });
-    }
-    delete shinySessions[sessionId];
-  });
+  res.json({ type: "shiny", url: `http://127.0.0.1:${port}`, port, sessionId });
 }
 
 router.post("/shiny/stop", (req, res) => {
