@@ -34,7 +34,7 @@ const LinkButton: React.FC<{ itemId: string }> = ({ itemId }) => {
       <Snackbar variant="solid" color="success" autoHideDuration={duration} resumeHideDuration={left}
         onMouseEnter={handlePause} onMouseLeave={handleResume} onFocus={handlePause} onBlur={handleResume}
         onUnmount={() => setLeft(undefined)} open={open} onClose={() => setOpen(false)}
-        sx={{ fontFamily: "Poppins", color: "white", backgroundColor: "#00726B" }}>
+        sx={{ color: "white", backgroundColor: "#007a70" }}>
         Link Copied to Clipboard
       </Snackbar>
     </>

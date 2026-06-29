@@ -1,9 +1,9 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import axios from "axios";
-import ChipDelete from "@mui/joy/ChipDelete";
-import { BiSolidEditAlt, BiX } from "react-icons/bi";
+import { BiX } from "react-icons/bi";
 import Button from "@mui/joy/Button";
 import Divider from "@mui/joy/Divider";
 import DialogTitle from "@mui/joy/DialogTitle";
@@ -16,57 +16,41 @@ import IconButton from "@mui/joy/IconButton";
 import { UserAuth } from "@/app/context/authContext";
 import config from "@/lib/config";
 
-function ModulList() {
-  // Buat sebuah jenis yang mencerminkan struktur data dari API
-  interface ModulData {
-    id: number;
-    data: {
-      namaModul: string;
-      codeSampel: string;
-      judulModul: string;
-      isLocked?: boolean;
-    };
-  }
+interface ModulData {
+  id: number;
+  data: {
+    namaModul: string;
+    codeSampel: string;
+    judulModul: string;
+    isLocked?: boolean;
+  };
+}
 
+function ModulList() {
   useEffect(() => {
-    document.title = "Modul Belajar | Rwikistat";
-    return () => {};
+    document.title = "Modul Belajar | RWikiStat";
   }, []);
 
-  // Kemudian gunakan jenis ini untuk menentukan jenis state
-  const [testData, setTestData] = useState<ModulData[]>([]);
+  const [modules, setModules] = useState<ModulData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = React.useState<number | null>(null);
-  const { user, logOut } = UserAuth();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const { user, userData } = UserAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const checkUser = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      if (user) {
-        try {
-          const idTokenResult = await user.getIdTokenResult();
-          const isAdminValue = idTokenResult.claims?.admin || false;
-          setIsAdmin(isAdminValue as boolean);
-        } catch (error) {
-          console.error("Error fetching custom claims:", error);
-          setIsAdmin(false); // Set a default value in case of an error
-        }
-      }
-    };
-
-    checkUser();
-  }, [user]);
+    if (!user) return;
+    user
+      .getIdTokenResult()
+      .then((idTokenResult) => setIsAdmin(Boolean(idTokenResult.claims?.admin || userData?.role === "admin")))
+      .catch(() => setIsAdmin(userData?.role === "admin"));
+  }, [user, userData?.role]);
 
   const fetchData = async () => {
     try {
+      setLoading(true);
       const storedToken = localStorage.getItem("customToken");
-      const headers = {
-        Authorization: `Bearer ${storedToken}`,
-      };
-
       const response = await axios.get(`${config.API_URL}/api/modul`, {
-        headers,
+        headers: { Authorization: `Bearer ${storedToken}` },
       });
       if (response.status === 200) {
         const sortedData = response.data.sort((a: ModulData, b: ModulData) => {
@@ -74,13 +58,12 @@ function ModulList() {
           const numB = parseInt(b.data.namaModul.match(/\d+/)?.[0] || "0", 10);
           return numA - numB;
         });
-
-        setTestData(sortedData);
-      } else {
-        console.error("Gagal mengambil data:", response.statusText);
+        setModules(sortedData);
       }
     } catch (error) {
       console.error("Gagal mengambil data:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -88,27 +71,13 @@ function ModulList() {
     fetchData();
   }, []);
 
-  const handleOpen = (id: number) => {
-    setOpen(id);
-  };
-
-  const handleClose = () => {
-    setOpen(null);
-  };
-
   const handleDelete = (id: number) => {
-    // Mendapatkan token dari localStorage atau sumber lainnya
     const storedToken = localStorage.getItem("customToken");
-
-    // Membuat header dengan menyertakan token
-    const headers = {
-      Authorization: `Bearer ${storedToken}`,
-    };
-    // Panggil endpoint dengan menggunakan ID modul
     axios
-      .delete(`${config.API_URL}/api/modul/${id}`, { headers })
-      .then((response) => {
-        console.log(id);
+      .delete(`${config.API_URL}/api/modul/${id}`, {
+        headers: { Authorization: `Bearer ${storedToken}` },
+      })
+      .then(() => {
         setOpen(null);
         fetchData();
       })
@@ -118,101 +87,84 @@ function ModulList() {
   };
 
   return (
-    <div className="px-4 md:px-7 ">
-      <div className="flex justify-between h-16 mb-5 ">
-        <h2 className="font-bold text-2xl text-[#00726B]">
-          Modul Pembelajaran
-        </h2>
-        {user && isAdmin === true && (
-          <Link href={`/modul/addNew`}>
-            <button
-              type="submit"
-              className=" w-full bg-[#00726B] py-2 px-10 rounded-lg hover:-translate-y-1 transition-all duration-500 text-white font-semibold mb-2"
-            >
-              Tambah Modul
-            </button>
+    <main className="rw-page">
+      <section className="rw-reveal flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="rw-kicker">Modul</p>
+          <h1 className="rw-heading mt-2">Pilih materi, lalu praktikkan dengan R.</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-600">
+            Setiap modul dapat berisi PDF, markdown, contoh kode, dan tautan Shiny.
+          </p>
+        </div>
+        {user && isAdmin ? (
+          <Link href="/modul/addNew" className="btn-primary w-fit">
+            Tambah Modul
           </Link>
-        )}
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 mx-auto w-full gap-5 ">
-        {testData.map((item) => (
-          <div
-            key={item.id}
-            className="group relative m-0 flex h-48 w-full rounded-xl shadow-xl  sm:mx-auto "
-          >
-            <div className="bg-gradient-to-t from-[#00726B] to-[#38B68D]  z-10 h-full w-full overflow-hidden rounded-xl  opacity-90 transition duration-300 ease-in-out group-hover:opacity-100">
-              <div className="mx-auto flex p-3">
-                <div className="p-2 absolute top-0 right-0">
-                  {user && isAdmin === true && (
-                    <React.Fragment>
-                      <IconButton
-                        color="danger"
-                        variant="solid"
-                        onClick={() => handleOpen(item.id)}
-                        size="md"
-                      >
-                        <BiX size="24" color="#fff" />
-                      </IconButton>
-                      <Modal
-                        open={open === item.id}
-                        onClose={handleClose}
-                        sx={{ zIndex: 99999 }}
-                      >
-                        <ModalDialog variant="outlined" role="alertdialog">
-                          <DialogTitle>
-                            <WarningRoundedIcon />
-                            Confirmation
-                          </DialogTitle>
-                          <Divider />
-                          <DialogContent>
-                            Apa anda yakin ingin menghapus modul?
-                          </DialogContent>
-                          <DialogActions>
-                            <Button
-                              variant="plain"
-                              color="danger"
-                              onClick={() => handleDelete(item.id)}
-                            >
-                              Hapus
-                            </Button>
-                            <Button
-                              variant="plain"
-                              color="neutral"
-                              onClick={() => setOpen(null)}
-                            >
-                              Cancel
-                            </Button>
-                          </DialogActions>
-                        </ModalDialog>
-                      </Modal>
-                    </React.Fragment>
-                  )}
-                </div>
-              </div>
-              {item.data.isLocked && (
-                <div className="absolute top-2 left-2 z-30 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
-                  Terkunci
-                </div>
-              )}
-            </div>
+        ) : null}
+      </section>
 
-            <Link
-              href={item.data.isLocked ? "#" : `/modul/${item.id}`}
-              className={`absolute bottom-0 z-20 m-0 pb-4 ps-4 transition duration-300 ease-in-out ${item.data.isLocked ? "opacity-50 pointer-events-none" : "group-hover:-translate-y-1 group-hover:translate-x-3 group-hover:scale-110"}`}
-            >
-              <div className="">
-                <h1 className=" text-2xl md:text-4xl font-bold text-white">
-                  {item.data.namaModul}
-                </h1>
-                <h1 className="text-base md:text-2xl  text-gray-200">
-                  {item.data.judulModul}
-                </h1>
-              </div>
-            </Link>
+      <section className="mt-7 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+        {loading ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-56 animate-pulse rounded-2xl bg-ink-200" />
+          ))
+        ) : modules.length === 0 ? (
+          <div className="rw-card col-span-full p-12 text-center">
+            <h2 className="text-lg font-semibold text-ink-950">Belum ada modul pembelajaran.</h2>
+            <p className="mt-2 text-sm text-ink-500">Modul akan tampil di sini setelah ditambahkan admin.</p>
           </div>
-        ))}
-      </div>
-    </div>
+        ) : (
+          modules.map((item, i) => {
+            const locked = Boolean(item.data.isLocked);
+            const href = locked ? "#" : `/modul/${item.id}`;
+            return (
+              <article
+                key={item.id}
+                className={`rw-card rw-reveal stagger-${Math.min(i + 1, 8)} group relative overflow-hidden p-5 transition-all duration-200 hover:-translate-y-1 hover:border-brand-200 hover:shadow-xl`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="rounded-2xl bg-brand-50 px-4 py-3 font-mono text-sm font-semibold text-brand-700">
+                    {item.data.namaModul.match(/\d+/)?.[0] ? `M${item.data.namaModul.match(/\d+/)?.[0]}` : "R"}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {locked ? (
+                      <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">Terkunci</span>
+                    ) : (
+                      <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">Aktif</span>
+                    )}
+                    {user && isAdmin ? (
+                      <IconButton color="danger" variant="soft" onClick={() => setOpen(item.id)} size="sm">
+                        <BiX size={20} />
+                      </IconButton>
+                    ) : null}
+                  </div>
+                </div>
+
+                <Link href={href} className={locked ? "pointer-events-none opacity-55" : "block"}>
+                  <h2 className="mt-6 text-2xl font-semibold tracking-[-0.02em] text-ink-950">{item.data.namaModul}</h2>
+                  <p className="mt-2 min-h-12 text-sm leading-6 text-ink-600">{item.data.judulModul}</p>
+                  <div className="mt-5 rounded-xl bg-ink-950 p-4 font-mono text-xs leading-6 text-brand-100">
+                    {(item.data.codeSampel || "summary(data)").slice(0, 88)}
+                  </div>
+                </Link>
+
+                <Modal open={open === item.id} onClose={() => setOpen(null)} sx={{ zIndex: 99999 }}>
+                  <ModalDialog variant="outlined" role="alertdialog">
+                    <DialogTitle><WarningRoundedIcon /> Konfirmasi</DialogTitle>
+                    <Divider />
+                    <DialogContent>Apa Anda yakin ingin menghapus modul?</DialogContent>
+                    <DialogActions>
+                      <Button variant="plain" color="danger" onClick={() => handleDelete(item.id)}>Hapus</Button>
+                      <Button variant="plain" color="neutral" onClick={() => setOpen(null)}>Batal</Button>
+                    </DialogActions>
+                  </ModalDialog>
+                </Modal>
+              </article>
+            );
+          })
+        )}
+      </section>
+    </main>
   );
 }
 

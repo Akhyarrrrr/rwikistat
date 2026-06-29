@@ -124,7 +124,7 @@ const Bookmark: React.FC<{ itemId: string }> = ({ itemId }) => {
   return (
     <button onClick={() => onPressHandler(itemId)} id={itemId}>
       {bookmarkButton ? (
-        <BiSolidBookmark size="20" color="#00726B" />
+        <BiSolidBookmark size="20" color="#007a70" />
       ) : (
         <BiBookmark size="20" color="black" />
       )}

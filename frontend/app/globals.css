@@ -1,9 +1,129 @@
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 html {
-  font-family: "Poppins";
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background: #c8eee5;
+  color: #041f1e;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background:
+    linear-gradient(180deg, rgba(232, 248, 244, 0.65), rgba(248, 250, 249, 0) 34rem),
+    #f8faf9;
+}
+
+a,
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+@layer utilities {
+  .stagger-1 { animation-delay: 0.05s; }
+  .stagger-2 { animation-delay: 0.1s; }
+  .stagger-3 { animation-delay: 0.15s; }
+  .stagger-4 { animation-delay: 0.2s; }
+  .stagger-5 { animation-delay: 0.25s; }
+  .stagger-6 { animation-delay: 0.3s; }
+  .stagger-7 { animation-delay: 0.35s; }
+  .stagger-8 { animation-delay: 0.4s; }
+
+  .shimmer-bg {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite linear;
+  }
+
+  .card-hover {
+    @apply transition-all duration-200 ease-out;
+  }
+  .card-hover:hover {
+    @apply -translate-y-0.5 shadow-lg;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand-900/10 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-brand-700 hover:shadow-lg hover:shadow-brand-900/15 active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-ink-200 bg-white px-5 py-2.5 text-sm font-semibold text-ink-800 shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-brand-200 hover:text-brand-700 hover:shadow-md active:translate-y-0 active:scale-[0.98];
+  }
+
+  .input-field {
+    @apply w-full rounded-xl border border-ink-200 bg-white px-4 py-3 text-sm text-ink-900 shadow-sm transition-all duration-150 placeholder:text-ink-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/10;
+  }
+
+  .rw-page {
+    @apply mx-auto w-full max-w-6xl px-4 py-5 md:px-7 md:py-7;
+  }
+
+  .rw-card {
+    @apply rounded-2xl border border-ink-200/80 bg-white shadow-sm shadow-ink-900/5;
+  }
+
+  .rw-panel {
+    @apply rounded-2xl border border-white/70 bg-white/85 shadow-xl shadow-brand-950/5 backdrop-blur;
+  }
+
+  .rw-kicker {
+    @apply text-xs font-semibold uppercase tracking-[0.16em] text-brand-700;
+  }
+
+  .rw-heading {
+    @apply text-3xl font-semibold tracking-[-0.02em] text-ink-950 md:text-4xl;
+  }
+
+  .rw-muted {
+    @apply text-sm leading-6 text-ink-600;
+  }
+
+  .rw-icon {
+    @apply inline-flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-100;
+  }
+
+  .rw-reveal {
+    animation: fadeUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .rw-surface-grid {
+    background-image:
+      linear-gradient(rgba(7, 63, 59, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(7, 63, 59, 0.06) 1px, transparent 1px);
+    background-size: 48px 48px;
+    background-position: -1px -1px;
+  }
+
+  .font-poppins {
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-ink-200;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
 }

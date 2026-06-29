@@ -1,11 +1,13 @@
 "use client";
-import React, { useEffect, useState, useCallback } from "react";
+
+import React, { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import CodeEditorWindow from "@/components/compiler/CodeEditorWindows";
 import config from "@/lib/config";
 
 const CodeEditor = () => {
   useEffect(() => {
-    document.title = "Compiler R | Rwikistat";
+    document.title = "Compiler R | RWikiStat";
   }, []);
 
   const [code, setCode] = useState("");
@@ -18,12 +20,16 @@ const CodeEditor = () => {
   const [option, setOption] = useState("string");
 
   const clearOutput = () => {
-    setOutput(""); setPlotImage(null); setErrorMsg(""); setShinyUrl(null);
+    setOutput("");
+    setPlotImage(null);
+    setErrorMsg("");
+    setShinyUrl(null);
   };
 
   const handleRunString = async () => {
     try {
-      setProcessing(true); clearOutput();
+      setProcessing(true);
+      clearOutput();
       const storedToken = localStorage.getItem("customToken");
       const response = await fetch(`${config.API_URL}/api/compiler/`, {
         method: "POST",
@@ -53,12 +59,15 @@ const CodeEditor = () => {
   }, [shinySessionId]);
 
   useEffect(() => {
-    return () => { stopShiny(); };
+    return () => {
+      stopShiny();
+    };
   }, [stopShiny]);
 
   const handleRunGraph = async () => {
     try {
-      setProcessing(true); clearOutput();
+      setProcessing(true);
+      clearOutput();
       const storedToken = localStorage.getItem("customToken");
       const response = await fetch(`${config.API_URL}/api/compiler/graph`, {
         method: "POST",
@@ -84,16 +93,23 @@ const CodeEditor = () => {
     if (action === "code") setCode(data);
   };
 
-  const processingLabel = option === "graph"
-    ? (code.includes("shinyApp") || code.includes("runApp") ? "Menjalankan Shiny..." : "Memproses...")
-    : "Memproses...";
+  const isShinyRun = option === "graph" && (code.includes("shinyApp") || code.includes("runApp"));
+  const processingLabel = option === "graph" ? (isShinyRun ? "Menjalankan Shiny..." : "Memproses grafik...") : "Menjalankan...";
 
   return (
-    <>
-      <div className="px-5">
-        <div className="flex flex-col md:flex-row items-center gap-4 pb-4 px-3 justify-end">
+    <main className="rw-page">
+      <section className="rw-reveal grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
+        <div>
+          <p className="rw-kicker">R Compiler</p>
+          <h1 className="rw-heading mt-2">Tulis kode R, lihat outputnya langsung.</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-600">
+            Gunakan mode standar untuk teks, atau mode grafik untuk plot dan Shiny.
+          </p>
+        </div>
+
+        <div className="rw-card flex flex-col gap-3 p-3 sm:flex-row">
           <select
-            className="w-64 text-center text-[#00726B] font-semibold outline-none rounded-md border border-gray-300 p-2"
+            className="input-field min-w-56 py-2.5 text-center font-semibold text-brand-700"
             value={option}
             onChange={async (e) => {
               setOption(e.target.value);
@@ -107,62 +123,74 @@ const CodeEditor = () => {
           <button
             onClick={option === "string" ? handleRunString : handleRunGraph}
             disabled={!code || processing}
-            className={`px-6 py-2 rounded-lg font-semibold text-white ${
-              processing ? "bg-gray-400" : "bg-[#00726B] hover:bg-[#005b54]"
-            }`}
+            className="btn-primary min-w-32"
           >
             {processing ? processingLabel : "Run"}
           </button>
         </div>
+      </section>
 
-        <div className="w-full">
-          <CodeEditorWindow code={code} onChange={onChange} language="r" theme="vs-dark" defaultValue="" />
+      <section className="mt-6 rw-reveal stagger-2">
+        <CodeEditorWindow code={code} onChange={onChange} language="r" theme="vs-dark" defaultValue="" />
+      </section>
+
+      <section className="mt-6 rw-reveal stagger-3">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-ink-950">Output</h2>
+          {shinyUrl ? (
+            <button onClick={stopShiny} className="rounded-xl bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100">
+              Stop Shiny
+            </button>
+          ) : null}
         </div>
 
-        <h2 className="font-bold text-xl mb-2 mt-5 text-[#00726B]">Output</h2>
-
-        {errorMsg && (
-          <div className="w-full bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">
+        {errorMsg ? (
+          <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {errorMsg}
           </div>
-        )}
+        ) : null}
 
-        {processing && option === "graph" && (code.includes("shinyApp") || code.includes("runApp")) && !shinyUrl && (
-          <div className="w-full bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-4">
+        {processing && isShinyRun && !shinyUrl ? (
+          <div className="mb-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
             Menunggu aplikasi Shiny siap...
           </div>
-        )}
+        ) : null}
 
-        {shinyUrl && (
-          <div className="w-full border border-gray-300 rounded-lg overflow-hidden mb-4">
-            <div className="bg-gray-100 px-4 py-2 text-sm text-gray-600 flex justify-between items-center">
-              <span className="font-medium text-green-700">Aplikasi Shiny berjalan</span>
-              <div className="flex items-center gap-2">
-                <button onClick={stopShiny} className="px-3 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600">
-                  Stop
-                </button>
-              </div>
+        {shinyUrl ? (
+          <div className="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-ink-200 bg-ink-50 px-4 py-3 text-sm text-ink-600">
+              <span className="font-semibold text-brand-700">Aplikasi Shiny berjalan</span>
+              <a href={shinyUrl} target="_blank" className="font-mono text-xs text-brand-700 underline">
+                buka tab baru
+              </a>
             </div>
             <iframe
               src={shinyUrl}
-              className="w-full h-[600px]"
+              className="h-[600px] w-full"
               title="Shiny App"
               onError={() => setErrorMsg("Gagal memuat aplikasi Shiny. Periksa apakah port dapat diakses.")}
             />
           </div>
-        )}
+        ) : null}
 
-        {plotImage && (
-          <img src={`data:image/png;base64,${plotImage}`} alt="Output grafik" className="max-w-full border border-gray-300 rounded-lg mb-4" />
-        )}
+        {plotImage ? (
+          <Image
+            src={`data:image/png;base64,${plotImage}`}
+            alt="Output grafik"
+            width={1200}
+            height={800}
+            unoptimized
+            className="mb-4 h-auto max-w-full rounded-2xl border border-ink-200 bg-white shadow-sm"
+          />
+        ) : null}
 
-        {(option === "string" || output) && !shinyUrl && (
-          <div className="w-full min-h-48 bg-[#1E1E1E] text-green-500 font-normal text-sm overflow-y-auto p-4 rounded-lg">
-            {output || (processing ? "" : "Klik Run untuk menjalankan kode.")}
-          </div>
-        )}
-      </div>
-    </>
+        {(option === "string" || output) && !shinyUrl ? (
+          <pre className="min-h-48 overflow-auto rounded-2xl border border-ink-800 bg-ink-950 p-5 font-mono text-sm leading-6 text-brand-100 shadow-xl shadow-ink-950/10">
+            {processing ? "Memproses output..." : output || "Klik Run untuk menjalankan kode."}
+          </pre>
+        ) : null}
+      </section>
+    </main>
   );
 };
 

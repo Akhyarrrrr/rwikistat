@@ -1,99 +1,80 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Transition } from "@headlessui/react";
 import Link from "next/link";
+import { IoClose, IoMenu } from "react-icons/io5";
+
+const navItems = [
+  { href: "#fitur", label: "Fitur" },
+  { href: "#modul", label: "Modul" },
+  { href: "#download", label: "Mobile" },
+];
 
 export default function MobileMenu() {
-  const [mobileNavOpen, setMobileNavOpen] = useState<boolean>(false);
-
+  const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
-  const mobileNav = useRef<HTMLDivElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
 
-  // close the mobile menu on click outside
   useEffect(() => {
-    const clickHandler = ({ target }: { target: EventTarget | null }): void => {
-      if (!mobileNav.current || !trigger.current) return;
-      if (
-        !mobileNavOpen ||
-        mobileNav.current.contains(target as Node) ||
-        trigger.current.contains(target as Node)
-      )
-        return;
-      setMobileNavOpen(false);
+    const clickHandler = ({ target }: MouseEvent) => {
+      if (!open || !menu.current || !trigger.current) return;
+      if (menu.current.contains(target as Node) || trigger.current.contains(target as Node)) return;
+      setOpen(false);
     };
     document.addEventListener("click", clickHandler);
     return () => document.removeEventListener("click", clickHandler);
-  });
+  }, [open]);
 
-  // close the mobile menu if the esc key is pressed
   useEffect(() => {
-    const keyHandler = ({ keyCode }: { keyCode: number }): void => {
-      if (!mobileNavOpen || keyCode !== 27) return;
-      setMobileNavOpen(false);
+    const keyHandler = ({ key }: KeyboardEvent) => {
+      if (open && key === "Escape") setOpen(false);
     };
     document.addEventListener("keydown", keyHandler);
     return () => document.removeEventListener("keydown", keyHandler);
-  });
+  }, [open]);
 
   return (
-    <div className="flex md:hidden">
-      {/* Hamburger button */}
+    <div className="flex md:hidden" ref={menu}>
       <button
         ref={trigger}
-        className={`hamburger ${mobileNavOpen && "active"}`}
+        className="inline-flex size-11 items-center justify-center rounded-xl border border-ink-200 bg-white text-ink-900 transition-colors hover:border-brand-200 hover:text-brand-700"
         aria-controls="mobile-nav"
-        aria-expanded={mobileNavOpen}
-        onClick={() => setMobileNavOpen(!mobileNavOpen)}
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
       >
         <span className="sr-only">Menu</span>
-        <svg
-          className="w-6 h-6 fill-current text-gray-900"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <rect y="4" width="24" height="2" />
-          <rect y="11" width="24" height="2" />
-          <rect y="18" width="24" height="2" />
-        </svg>
+        {open ? <IoClose size={22} /> : <IoMenu size={22} />}
       </button>
 
-      {/*Mobile navigation */}
-      <div ref={mobileNav}>
-        <Transition
-          show={mobileNavOpen}
-          as="nav"
-          id="mobile-nav"
-          className="absolute top-full h-screen pb-16 z-20 left-0 w-full overflow-scroll bg-white"
-          enter="transition ease-out duration-200 transform"
-          enterFrom="opacity-0 -translate-y-2"
-          enterTo="opacity-100 translate-y-0"
-          leave="transition ease-out duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <ul className="px-5 py-2">
-            <li>
-              <Link
-                href="/signin"
-                className=" px-5 text-white bg-[#00726B]flex font-medium w-full hover:text-gray-900 py-2 justify-center"
-                onClick={() => setMobileNavOpen(false)}
-              >
-                Sign in
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/signin"
-                className="py-3 px-5 text-white bg-[#00726B] w-full my-2"
-                onClick={() => setMobileNavOpen(false)}
-              >
-                <span>Masuk</span>
-              </Link>
-            </li>
-          </ul>
-        </Transition>
-      </div>
+      <Transition
+        show={open}
+        as="nav"
+        id="mobile-nav"
+        className="absolute left-4 right-4 top-[4.75rem] rounded-2xl border border-ink-200 bg-white p-3 shadow-xl shadow-ink-900/10"
+        enter="transition ease-out duration-200 transform"
+        enterFrom="opacity-0 -translate-y-2"
+        enterTo="opacity-100 translate-y-0"
+        leave="transition ease-out duration-150"
+        leaveFrom="opacity-100"
+        leaveTo="opacity-0 -translate-y-2"
+      >
+        <div className="grid gap-1">
+          {navItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="rounded-xl px-4 py-3 text-sm font-medium text-ink-700 hover:bg-brand-50 hover:text-brand-700"
+              onClick={() => setOpen(false)}
+            >
+              {item.label}
+            </Link>
+          ))}
+          <Link href="/signin" className="btn-primary mt-2 w-full" onClick={() => setOpen(false)}>
+            Belajar Sekarang
+          </Link>
+        </div>
+      </Transition>
     </div>
   );
 }

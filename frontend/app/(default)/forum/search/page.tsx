@@ -1,14 +1,17 @@
 "use client";
-import React, { useState, useEffect } from "react";
+
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import TimeAgo from "react-timeago";
-import { BiCommentDetail, BiLink } from "react-icons/bi";
+import { BiCommentDetail } from "react-icons/bi";
+import { IoSearch } from "react-icons/io5";
 import LikeButton from "@/components/LikeButton";
 import Bookmark from "@/components/Bookmark";
-import { ToastContainer } from "react-toastify";
 import { MdVerified } from "react-icons/md";
 import config from "@/lib/config";
+import { SkeletonCard } from "@/components/Skeleton";
+import LinkButton from "@/components/LinkButton";
 
 interface ForumData {
   id: string;
@@ -32,10 +35,14 @@ interface ForumData {
   commentCount: number;
 }
 
+function Avatar({ src, name }: { src?: string; name?: string }) {
+  if (src) return <Image src={src} alt={name || "Avatar"} width={48} height={48} className="rounded-xl object-cover" />;
+  return <div className="flex size-12 items-center justify-center rounded-xl bg-brand-50 font-semibold text-brand-700">{(name || "U").slice(0, 1).toUpperCase()}</div>;
+}
+
 export default function Search() {
   useEffect(() => {
-    document.title = "Search Forum | Rwikistat";
-    return () => {};
+    document.title = "Search Forum | RWikiStat";
   }, []);
 
   const [query, setQuery] = useState("");
@@ -43,23 +50,17 @@ export default function Search() {
   const [loading, setLoading] = useState(false);
   const [searchExecuted, setSearchExecuted] = useState(false);
 
-  const handleSearch = async () => {
+  const handleSearch = async (event?: React.FormEvent) => {
+    event?.preventDefault();
+    if (!query.trim()) return;
+
     try {
-      // Mendapatkan token dari localStorage atau sumber lainnya
       const storedToken = localStorage.getItem("customToken");
-
-      // Membuat header dengan menyertakan token
-      const headers = {
-        Authorization: `Bearer ${storedToken}`,
-      };
-
       setLoading(true);
-      const response = await fetch(
-        `${config.API_URL}/api/forum/search?query=${query}`,
-        { headers }
-      );
-      const data = await response.json();
-      setResults(data);
+      const response = await fetch(`${config.API_URL}/api/forum/search?query=${encodeURIComponent(query.trim())}`, {
+        headers: { Authorization: `Bearer ${storedToken}` },
+      });
+      setResults(await response.json());
       setSearchExecuted(true);
     } catch (error) {
       console.error("Error:", error);
@@ -69,127 +70,78 @@ export default function Search() {
   };
 
   return (
-    <div className="w-full md:w-3/4 items-center justify-center mx-auto px-3">
-      <div className="w-full shadow-md bg-white rounded-lg border mb-3">
-        <div className=" w-full p-4 flex space-x-4">
+    <main className="rw-page max-w-4xl">
+      <section className="rw-reveal">
+        <p className="rw-kicker">Forum Search</p>
+        <h1 className="rw-heading mt-2">Temukan diskusi yang sudah ada.</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-600">
+          Cari berdasarkan judul topik sebelum membuat pertanyaan baru.
+        </p>
+      </section>
+
+      <form onSubmit={handleSearch} className="rw-card mt-7 flex gap-3 p-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3 rounded-xl bg-ink-50 px-4">
+          <IoSearch className="text-ink-400" size={21} />
           <input
-            className="border rounded-md p-2 flex-1 border-gray-300"
+            className="w-full border-0 bg-transparent py-3 text-sm text-ink-900 outline-none placeholder:text-ink-400"
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            placeholder="Cari judul forum..."
           />
-          <button
-            className="bg-[#00726B] text-white px-4 py-2 rounded-md text-sm"
-            onClick={handleSearch}
-          >
-            Search
-          </button>
         </div>
-      </div>
+        <button className="btn-primary" disabled={loading || !query.trim()}>
+          {loading ? "Mencari..." : "Cari"}
+        </button>
+      </form>
 
-      {loading && <p className="text-center p-8 text-gray-700">Loading...</p>}
+      <section className="mt-6 grid gap-4">
+        {loading ? Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />) : null}
 
-      {searchExecuted && results.length === 0 && !loading && (
-        <p className="text-center text-gray-700">No matching data</p>
-      )}
+        {searchExecuted && results.length === 0 && !loading ? (
+          <div className="rw-card p-12 text-center">
+            <h2 className="text-lg font-semibold text-ink-950">Tidak ada hasil.</h2>
+            <p className="mt-2 text-sm text-ink-500">Coba kata kunci yang lebih pendek atau buat topik baru.</p>
+          </div>
+        ) : null}
 
-      {results.map((result) => (
-        <div
-          key={result.id}
-          className=" items-start px-4 py-6 my-5 shadow-md rounded-lg outline-1 border"
-        >
-          <Link href={`userId/${result.data.email}`}>
-            <div className="flex">
-              <div className=" rounded-full mr-2">
-                <Image
-                  src={result.user.photoURL}
-                  alt="Picture of the author"
-                  width={50}
-                  height={50}
-                  className="rounded-full"
-                />
-              </div>
-
-              <div className="items-center justify-between">
-                <div className="flex items-center">
-                  <p className="text-lg font-semibold text-gray-900 -mt-1">
-                    {result.user.displayName}
-                  </p>
-                  {result.user.verified && (
-                    <MdVerified
-                      size={18}
-                      className="mb-1 ml-1 text-[#00726B]"
-                    />
-                  )}
+        {!loading && results.map((result) => (
+          <article key={result.id} className="rw-card p-5 transition-all duration-200 hover:-translate-y-1 hover:border-brand-200 hover:shadow-lg">
+            <Link href={`userId/${result.data.email}`} className="flex items-center gap-3">
+              <Avatar src={result.user.photoURL} name={result.user.displayName} />
+              <div className="min-w-0">
+                <div className="flex items-center gap-1">
+                  <p className="truncate font-semibold text-ink-950">{result.user.displayName}</p>
+                  {result.user.verified ? <MdVerified size={17} className="text-brand-600" /> : null}
                 </div>
-                <p className="text-gray-700 text-sm">
-                  {result.data.createdAt._seconds * 1000 >
-                  new Date().getTime() - 7 * 24 * 60 * 60 * 1000 ? (
-                    <TimeAgo
-                      date={new Date(result.data.createdAt._seconds * 1000)}
-                    />
+                <p className="text-xs text-ink-500">
+                  {result.data.createdAt._seconds * 1000 > new Date().getTime() - 7 * 24 * 60 * 60 * 1000 ? (
+                    <TimeAgo date={new Date(result.data.createdAt._seconds * 1000)} />
                   ) : (
-                    <span>
-                      {new Date(
-                        result.data.createdAt._seconds * 1000
-                      ).toLocaleDateString()}
-                    </span>
+                    <span>{new Date(result.data.createdAt._seconds * 1000).toLocaleDateString()}</span>
                   )}
                 </p>
               </div>
-            </div>
-          </Link>
-          <Link href={`/forum/${result.id}`}>
-            <div className="my-3">
-              <p className="text-gray-700 text-xl font-bold">
-                {result.data.title}
-              </p>
-              <p className="text-gray-700">{result.data.topics}</p>
-            </div>
-          </Link>
-          <hr />
-          <div className=" mt-3 flex items-center">
-            <div className="flex 2 text-gray-700 text-sm mr-3">
-              <LikeButton itemId={result.id} />
-              <span>{result.data.likes}</span>
-            </div>
-            <div className="flex  text-gray-700 text-sm mr-3">
-              <BiCommentDetail size="20" />
-              <span>{result.commentCount}</span>
-            </div>
-            <div className="flex  text-gray-700 text-sm mr-3">
+            </Link>
+            <Link href={`/forum/${result.id}`} className="mt-4 block">
+              <h2 className="text-xl font-semibold tracking-[-0.01em] text-ink-950">{result.data.title}</h2>
+              <p className="mt-2 line-clamp-3 text-sm leading-6 text-ink-600">{result.data.topics}</p>
+            </Link>
+            <div className="mt-5 flex items-center gap-4 border-t border-ink-100 pt-4 text-sm text-ink-600">
+              <div className="flex items-center gap-1">
+                <LikeButton itemId={result.id} />
+                <span>{result.data.likes}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <BiCommentDetail size={20} />
+                <span>{result.commentCount}</span>
+              </div>
               <Bookmark itemId={result.id} />
+              <LinkButton itemId={result.id} />
             </div>
-            <div className="flex  text-gray-700 text-sm mr-3">
-              <BiLink
-                size="20"
-                onClick={() => {
-                  const linkElement = document.querySelector(
-                    `a[href="/forum/${result.id}"]`
-                  );
-                  const link = (linkElement as HTMLAnchorElement).href;
-                  if (link) {
-                    navigator.clipboard.writeText(link);
-                  }
-                }}
-              />
-              <ToastContainer
-                position="bottom-right"
-                autoClose={3000}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-                theme="light"
-              />
-            </div>
-          </div>
-        </div>
-      ))}
-      {/* Hasil Seacrch Disini */}
-    </div>
+          </article>
+        ))}
+      </section>
+    </main>
   );
 }

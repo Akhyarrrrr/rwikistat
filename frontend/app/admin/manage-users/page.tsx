@@ -10,6 +10,7 @@ import Sheet from "@mui/joy/Sheet";
 import Box from "@mui/joy/Box";
 import Avatar from "@mui/joy/Avatar";
 import Link from "next/link";
+import { SkeletonBlock } from "@/components/Skeleton";
 
 interface User {
   id: string;
@@ -23,15 +24,17 @@ interface User {
 export default function ManageUsers() {
   const { user } = UserAuth();
   const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchUsers = () => {
+    setLoading(true);
     const token = localStorage.getItem("customToken");
     fetch(`${config.API_URL}/api/admin/users`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
-      .then(setUsers)
-      .catch(() => {});
+      .then((res) => { setUsers(res); setLoading(false); })
+      .catch(() => setLoading(false));
   };
 
   useEffect(() => { fetchUsers(); }, []);
@@ -70,36 +73,40 @@ export default function ManageUsers() {
   };
 
   return (
-    <Box>
+    <Box className="animate-fade-in">
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography level="h2" sx={{ color: "#00726B" }}>
+        <Typography level="h2" sx={{ color: "#007a70", fontWeight: 700 }}>
           Manage Users
         </Typography>
         <Link href="/verified/addUser">
-          <Button size="sm" sx={{ bgcolor: "#00726B" }}>
+          <Button size="sm" sx={{ bgcolor: "#007a70" }}>
             Tambah User
           </Button>
         </Link>
       </Box>
-      {users.map((u) => (
-        <Sheet
-          key={u.id}
-          sx={{ p: 2, mb: 1, borderRadius: "md", display: "flex", alignItems: "center", gap: 2 }}
-        >
+      {loading ? Array.from({ length: 5 }).map((_, i) => (
+        <Sheet key={i} sx={{ p: 2, mb: 1, borderRadius: "md", display: "flex", alignItems: "center", gap: 2 }}>
+          <SkeletonBlock className="w-8 h-8 rounded-full" />
+          <Box sx={{ flex: 1 }}>
+            <SkeletonBlock className="h-4 w-32 rounded" />
+            <SkeletonBlock className="h-3 w-48 mt-1 rounded" />
+          </Box>
+          <SkeletonBlock className="h-5 w-14 rounded" />
+          <SkeletonBlock className="h-8 w-28 rounded" />
+          <SkeletonBlock className="h-8 w-16 rounded" />
+        </Sheet>
+      )) : users.length === 0 ? (
+        <Box sx={{ textAlign: "center", py: 8, color: "text.secondary" }}>
+          <Typography>Belum ada user.</Typography>
+        </Box>
+      ) : users.map((u) => (
+        <Sheet key={u.id} sx={{ p: 2, mb: 1, borderRadius: "md", display: "flex", alignItems: "center", gap: 2 }}>
           <Avatar src={u.photoURL || ""} alt={u.displayName} size="sm" />
           <Box sx={{ flex: 1 }}>
-            <Typography level="title-sm">{u.displayName || "—"}</Typography>
+            <Typography level="title-sm">{u.displayName || "-"}</Typography>
             <Typography level="body-xs">{u.email}</Typography>
           </Box>
-          <Typography
-            level="body-xs"
-            sx={{
-              px: 1,
-              py: 0.5,
-              borderRadius: "sm",
-              bgcolor: u.role === "admin" ? "primary.100" : "neutral.100",
-            }}
-          >
+          <Typography level="body-xs" sx={{ px: 1, py: 0.5, borderRadius: "sm", bgcolor: u.role === "admin" ? "primary.100" : "neutral.100" }}>
             {u.role}
           </Typography>
           <Button size="sm" variant="soft" color="neutral" onClick={() => toggleRole(u.id, u.role || "user")}>

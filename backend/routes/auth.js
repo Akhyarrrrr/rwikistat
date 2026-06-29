@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { admin, firestore } = require("../adminConfig");
+const verifyToken = require("../middleware/verifyToken");
 
 router.post("/register", async (req, res) => {
   try {
@@ -56,15 +57,9 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.get("/me", async (req, res) => {
+router.get("/me", verifyToken, async (req, res) => {
   try {
-    const bearer = req.headers["authorization"];
-    if (!bearer || !bearer.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "Token tidak ditemukan." });
-    }
-    const idToken = bearer.split(" ")[1];
-    const decoded = await admin.auth().verifyIdToken(idToken);
-    const uid = decoded.uid;
+    const uid = req.user.uid;
     const userDoc = await firestore.collection("users").doc(uid).get();
     if (!userDoc.exists) {
       return res.status(404).json({ error: "Pengguna tidak ditemukan." });

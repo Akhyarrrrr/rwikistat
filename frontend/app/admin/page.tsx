@@ -43,7 +43,7 @@ export default function AdminDashboard() {
 
   return (
     <Box>
-      <Typography level="h2" sx={{ color: "#00726B", mb: 3 }}>
+      <Typography level="h2" sx={{ color: "#007a70", mb: 3, fontWeight: 700 }}>
         Dashboard
       </Typography>
       <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>

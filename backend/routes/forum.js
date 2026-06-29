@@ -72,7 +72,8 @@ router.get("/page/", async (req, res) => {
     const snapshot = await firestore.collection("forum").orderBy("createdAt", "desc").offset(startIndex).get();
     const forumData = await Promise.all(snapshot.docs.map(async (doc) => {
       const user = (await firestore.collection("users").doc(doc.data().uid).get()).data() || {};
-      return { id: doc.id, data: doc.data(), user: { uid: user.uid || doc.data().uid, displayName: user.displayName || "Pengguna", photoURL: user.photoURL || "", verified: user.verified || false } };
+      const commentCount = (await firestore.collection("forum").doc(doc.id).collection("comments").get()).size;
+      return { id: doc.id, data: doc.data(), user: { uid: user.uid || doc.data().uid, displayName: user.displayName || "Pengguna", photoURL: user.photoURL || "", verified: user.verified || false }, commentCount };
     }));
     res.json({ forumData: forumData.slice(0, itemsPerPage), currentPage: page, totalPages: Math.ceil(totalItems / itemsPerPage) });
   } catch (error) {
@@ -87,7 +88,8 @@ router.get("/", async (req, res) => {
     const snapshot = await firestore.collection("forum").orderBy("createdAt", "desc").get();
     const forumData = await Promise.all(snapshot.docs.map(async (doc) => {
       const user = (await firestore.collection("users").doc(doc.data().uid).get()).data() || {};
-      return { id: doc.id, data: doc.data(), user: { uid: user.uid || doc.data().uid, displayName: user.displayName || "Pengguna", photoURL: user.photoURL || "", verified: user.verified || false } };
+      const commentCount = (await firestore.collection("forum").doc(doc.id).collection("comments").get()).size;
+      return { id: doc.id, data: doc.data(), user: { uid: user.uid || doc.data().uid, displayName: user.displayName || "Pengguna", photoURL: user.photoURL || "", verified: user.verified || false }, commentCount };
     }));
     res.json({ forumData });
   } catch (error) {

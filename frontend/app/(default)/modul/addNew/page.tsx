@@ -69,21 +69,26 @@ export default function Page() {
     }
   };
   return (
-    <div className="flex items-center justify-center py-12 md:px-12">
-      <div className="mx-auto w-full  bg-white">
-        <p className="py-2 px-9 text-2xl md:text-3xl font-extrabold text-[#00726B] ">
-          Tambah Modul Pembelajaran
+    <main className="rw-page">
+      <section className="rw-reveal">
+        <p className="rw-kicker">Admin Modul</p>
+        <h1 className="rw-heading mt-2">Tambah modul pembelajaran.</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-600">
+          Upload PDF ke storage, lalu lengkapi metadata, contoh kode R, dan markdown modul.
         </p>
+      </section>
+
+      <div className="rw-card mt-7 p-5 md:p-7">
         <form
-          className="py-6 px-9"
+          className="space-y-6"
           onSubmit={handleFormSubmit}
           action=""
           method=""
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 md:gap-5">
-            <div className="mb-5">
-              <label className="mb-3 block text-base font-medium text-[#07074D]">
-                Masukan Nama Modul
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-ink-800">
+                Nama modul
               </label>
               <input
                 type="namaModul"
@@ -91,13 +96,13 @@ export default function Page() {
                 id="namaModul"
                 value={namaModul}
                 onChange={(e) => setNamaModul(e.target.value)}
-                placeholder="contoh : Modul 1, Modul 2 dll.."
-                className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#00726B] focus:shadow-md"
+                placeholder="Contoh: Modul 1"
+                className="input-field"
               />
             </div>
-            <div className="mb-5">
-              <label className="mb-3 block text-base font-medium text-[#07074D]">
-                Masukan Judul Modul
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-ink-800">
+                Judul modul
               </label>
               <input
                 type="judulModul"
@@ -105,14 +110,14 @@ export default function Page() {
                 id="judulModul"
                 value={judulModul}
                 onChange={(e) => setJudulModul(e.target.value)}
-                placeholder="contoh : Belajar Dasar Statistik"
-                className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#00726B] focus:shadow-md"
+                placeholder="Contoh: Belajar Dasar Statistik"
+                className="input-field"
               />
             </div>
           </div>
-          <div className="mb-5">
-            <label className="mb-3 block text-base font-medium text-[#07074D]">
-              Masukan Url Shiny
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-ink-800">
+              URL Shiny
             </label>
             <input
               type="urlShiny"
@@ -121,65 +126,70 @@ export default function Page() {
               value={urlShiny}
               onChange={(e) => setUrlShiny(e.target.value)}
               placeholder="local"
-              className="w-full rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#00726B] focus:shadow-md"
+              className="input-field"
             />
           </div>
 
-          <div className="mb-5">
-            <label className="mb-3 block text-base font-medium text-[#07074D]">
-              Masukan Contoh Kode R
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-ink-800">
+              Contoh kode R
             </label>
             <textarea
               value={codeSampel}
               onChange={(e) => setCodeSampel(e.target.value)}
               autoCorrect="false"
-              placeholder="contoh : 1 + 1"
-              className="font-mono w-full h-44 rounded-md border border-[#e0e0e0] bg-white p-6 text-sm font-medium text-[#6B7280] outline-none focus:border-[#00726B] focus:shadow-md"
+              placeholder="Contoh: summary(cars)"
+              className="input-field h-44 font-mono"
             />
           </div>
 
-          <div className="mb-6 pt-4">
-            <label className="mb-5 block text-xl font-semibold text-[#07074D]">
-              Upload File Modul
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-ink-800">
+              Upload PDF modul
             </label>
 
-            <div className="mb-8 px-5 py-10 rounded-md border border-dashed border-[#e0e0e0]">
+            <div className="rounded-2xl border border-dashed border-brand-200 bg-brand-50/50 px-5 py-8">
               <input
                 name="file"
                 id="file"
                 type="file"
                 accept=".pdf"
                 onChange={handleFileChange}
-                className="block w-full text-sm text-gray-900  rounded-md cursor-pointer bg-gray-50  focus:outline-none "
+                className="block w-full cursor-pointer rounded-xl border border-ink-200 bg-white text-sm text-ink-600 file:mr-4 file:border-0 file:bg-brand-600 file:px-4 file:py-3 file:text-sm file:font-semibold file:text-white focus:outline-none"
               />
             </div>
           </div>
 
-          <div className="mb-5">
-            <label className="mb-3 block text-base font-medium text-[#07074D]">
-              Masukan Markdown Text
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-ink-800">
+              Markdown modul
             </label>
 
-            <Editor
-              height="55vh"
-              width={`100%`}
-              language="markdown"
-              value={textData}
-              theme="vs-dark"
-              defaultValue="# Add some markdown text here"
-              onChange={(value) => setTextData(value || "")}
-              options={{
-                fontSize: 14,
-              }}
-            />
+            <div className="overflow-hidden rounded-2xl border border-ink-800 bg-ink-950">
+              <Editor
+                height="55vh"
+                width={`100%`}
+                language="markdown"
+                value={textData}
+                theme="vs-dark"
+                defaultValue="# Add some markdown text here"
+                onChange={(value) => setTextData(value || "")}
+                options={{
+                  fontFamily: "var(--font-geist-mono)",
+                  fontSize: 14,
+                  minimap: { enabled: false },
+                  padding: { top: 16, bottom: 16 },
+                }}
+              />
+            </div>
           </div>
 
-          <div className="mb-5">
-            <label className="mb-3 block text-base font-medium text-[#07074D]">
-              Preview Markdown Text
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-ink-800">
+              Preview markdown
             </label>
             <article
-              className="rounded-md border border-[#e0e0e0] p-3"
+              className="rounded-2xl border border-ink-200 bg-white p-3"
               data-color-mode="light"
             >
               <MarkdownPreview source={textData} className="px-8 py-3" />
@@ -189,13 +199,13 @@ export default function Page() {
           <div>
             <button
               type="submit"
-              className="hover:shadow-form w-full rounded-md bg-[#00726B] py-3 px-8 text-center text-base font-semibold text-white outline-none"
+              className="btn-primary w-full py-3 text-base"
             >
               Tambah Modul Baru
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </main>
   );
 }

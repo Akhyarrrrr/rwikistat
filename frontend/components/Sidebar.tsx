@@ -1,92 +1,45 @@
-import React, { useEffect, useState } from "react";
-import { UserAuth } from "@/app/context/authContext";
-import GlobalStyles from "@mui/joy/GlobalStyles";
-import Avatar from "@mui/joy/Avatar";
-import Box from "@mui/joy/Box";
-import Button from "@mui/joy/Button";
-import Card from "@mui/joy/Card";
-import Chip from "@mui/joy/Chip";
-import Divider from "@mui/joy/Divider";
-import IconButton from "@mui/joy/IconButton";
-import Input from "@mui/joy/Input";
-import LinearProgress from "@mui/joy/LinearProgress";
-import List from "@mui/joy/List";
-import ListItem from "@mui/joy/ListItem";
-import ListItemButton, { listItemButtonClasses } from "@mui/joy/ListItemButton";
-import ListItemContent from "@mui/joy/ListItemContent";
-import Typography from "@mui/joy/Typography";
-import Sheet from "@mui/joy/Sheet";
-import Stack from "@mui/joy/Stack";
-import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import TerminalIcon from "@mui/icons-material/Terminal";
-import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
-import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
-import ShoppingCartRoundedIcon from "@mui/icons-material/ShoppingCartRounded";
-import AssignmentRoundedIcon from "@mui/icons-material/AssignmentRounded";
-import QuestionAnswerRoundedIcon from "@mui/icons-material/QuestionAnswerRounded";
-import GroupRoundedIcon from "@mui/icons-material/GroupRounded";
-import SupportRoundedIcon from "@mui/icons-material/SupportRounded";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
-import BrightnessAutoRoundedIcon from "@mui/icons-material/BrightnessAutoRounded";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
-import VerifiedIcon from "@mui/icons-material/Verified";
-import SmsIcon from "@mui/icons-material/Sms";
-import Image from "next/image";
-import RwikiLogo from "@/public/logo-horizontal.png";
-import HistoryIcon from "@mui/icons-material/History";
-import ColorSchemeToggle from "./ColorSchemeToggle";
-import { closeSidebar } from "@/components/utils";
-import { MdVerified } from "react-icons/md";
-import SupervisorAccountIcon from "@mui/icons-material/SupervisorAccount";
+"use client";
 
-function Toggler({
-  defaultExpanded = false,
-  renderToggle,
-  children,
-}: {
-  defaultExpanded?: boolean;
-  children: React.ReactNode;
-  renderToggle: (params: {
-    open: boolean;
-    setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  }) => React.ReactNode;
-}) {
-  const [open, setOpen] = React.useState(defaultExpanded);
-  return (
-    <React.Fragment>
-      {renderToggle({ open, setOpen })}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateRows: open ? "1fr" : "0fr",
-          transition: "0.2s ease",
-          "& > *": {
-            overflow: "hidden",
-          },
-        }}
-      >
-        {children}
-      </Box>
-    </React.Fragment>
-  );
-}
+import React, { useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { FaBookOpen, FaComments, FaTerminal, FaUser, FaUsers } from "react-icons/fa6";
+import { IoIdCardOutline, IoLogOutOutline } from "react-icons/io5";
+import { MdVerified } from "react-icons/md";
+import { RiRobot2Line } from "react-icons/ri";
+import { UserAuth } from "@/app/context/authContext";
+import { closeSidebar } from "@/components/utils";
+
+const navItems = [
+  { href: "/compiler", label: "R Compiler", icon: <FaTerminal /> },
+  { href: "/modul", label: "Modul", icon: <FaBookOpen /> },
+  { href: "/forum", label: "Forum", icon: <FaComments /> },
+  { href: "/chatbot", label: "Chatbot", icon: <RiRobot2Line /> },
+  { href: "/userId", label: "User ID", icon: <IoIdCardOutline /> },
+  { href: "/profile", label: "Profile", icon: <FaUser /> },
+];
 
 export default function Sidebar() {
   const { user, userData, logOut } = UserAuth();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const pathname = usePathname();
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      user.getIdTokenResult().then((idTokenResult) => {
-        setIsAdmin(!!idTokenResult.claims?.admin);
-      }).catch(() => setIsAdmin(false));
+    if (!user) {
+      setIsAdmin(false);
+      return;
     }
-  }, [user]);
 
-  const photoURL = user?.photoURL || "";
+    user
+      .getIdTokenResult()
+      .then((idTokenResult) => setIsAdmin(Boolean(idTokenResult.claims?.admin || userData?.role === "admin")))
+      .catch(() => setIsAdmin(userData?.role === "admin"));
+  }, [user, userData?.role]);
+
+  const items = isAdmin
+    ? [...navItems, { href: "/verified", label: "Manage User", icon: <FaUsers /> }]
+    : navItems;
 
   const handleSignOut = async () => {
     try {
@@ -97,224 +50,76 @@ export default function Sidebar() {
   };
 
   return (
-    <Sheet
-      className="Sidebar"
-      sx={{
-        position: {
-          xs: "fixed",
-          md: "sticky",
-        },
-        transform: {
-          xs: "translateX(calc(100% * (var(--SideNavigation-slideIn, 0) - 1)))",
-          md: "none",
-        },
-        transition: "transform 0.4s, width 0.4s",
-        zIndex: 10000,
-        height: "100dvh",
-        width: "var(--Sidebar-width)",
-        top: 0,
-        p: 2,
-        flexShrink: 0,
-        display: "flex",
-        flexDirection: "column",
-        gap: 2,
-        borderRight: "1px solid",
-        borderColor: "divider",
-      }}
-    >
-      <GlobalStyles
-        styles={(theme) => ({
-          ":root": {
-            "--Sidebar-width": "220px",
-            [theme.breakpoints.up("lg")]: {
-              "--Sidebar-width": "240px",
-            },
-          },
-        })}
-      />
-      <Box
-        className="Sidebar-overlay"
-        sx={{
-          position: "fixed",
-          zIndex: 9998,
-          top: 0,
-          left: 0,
-          width: "100vw",
-          height: "100vh",
-          opacity: "var(--SideNavigation-slideIn)",
-          backgroundColor: "var(--joy-palette-background-backdrop)",
-          transition: "opacity 0.4s",
-          transform: {
-            xs: "translateX(calc(100% * (var(--SideNavigation-slideIn, 0) - 1) + var(--SideNavigation-slideIn, 0) * var(--Sidebar-width, 0px)))",
-            lg: "translateX(-100%)",
-          },
-        }}
-        onClick={() => closeSidebar()}
-      />
-      <Box
-        sx={{
-          display: "flex",
-          gap: 1,
-          alignItems: "center",
-          marginLeft: 3,
-          marginTop: 2,
-        }}
-      >
-        <Image src={RwikiLogo} alt={"Rwikistat Icon"} width={128} height={40} />
-      </Box>
-      <Box
-        sx={{
-          minHeight: 0,
-          overflow: "hidden auto",
-          flexGrow: 1,
-          display: "flex",
-          flexDirection: "column",
-          [`& .${listItemButtonClasses.root}`]: {
-            gap: 1.5,
-          },
-        }}
-      >
-        <List
-          size="sm"
-          sx={{
-            gap: 0.3,
-            "--List-nestedInsetStart": "30px",
-            "--ListItem-radius": (theme) => theme.vars.radius.sm,
-            marginTop: 3,
-          }}
-        >
-          <ListItem>
-            <ListItemButton role="menuitem" component="a" href="/compiler">
-              <IconButton size="md">
-                <TerminalIcon />
-              </IconButton>
-              <ListItemContent>
-                <Typography className="font-poppins" level="title-sm">
-                  R Compiler
-                </Typography>
-              </ListItemContent>
-            </ListItemButton>
-          </ListItem>
+    <>
+      <aside className="Sidebar fixed inset-y-0 left-0 z-[10000] flex w-[280px] flex-col border-r border-white/80 bg-white/95 p-4 shadow-2xl shadow-ink-950/10 backdrop-blur-xl transition-transform duration-300 md:sticky md:top-0 md:h-[100dvh] md:shadow-none">
+        <style>{`:root { --Sidebar-width: 280px; } .Sidebar { transform: translateX(calc(-100% + (var(--SideNavigation-slideIn, 0) * 100%))); } .Sidebar-overlay { transform: translateX(calc(-100% + (var(--SideNavigation-slideIn, 0) * 100%))); } @media (min-width: 768px) { .Sidebar { transform: none; } .Sidebar-overlay { transform: translateX(-100%); } }`}</style>
 
-          <ListItem>
-            <ListItemButton role="menuitem" component="a" href="/modul">
-              <IconButton>
-                <LibraryBooksIcon />
-              </IconButton>
-              <ListItemContent>
-                <Typography className="font-poppins" level="title-sm">
-                  Modul
-                </Typography>
-              </ListItemContent>
-            </ListItemButton>
-          </ListItem>
+        <Link href="/compiler" onClick={closeSidebar} className="flex items-center rounded-2xl bg-white p-2 ring-1 ring-ink-100">
+          <Image src="/logo-horizontal.png" alt="RWikiStat" width={150} height={46} priority />
+        </Link>
 
-          <ListItem>
-            <ListItemButton role="menuitem" component="a" href="/forum">
-              <IconButton>
-                <QuestionAnswerRoundedIcon />
-              </IconButton>
-              <ListItemContent>
-                <Typography className="font-poppins" level="title-sm">
-                  Forum
-                </Typography>
-              </ListItemContent>
-            </ListItemButton>
-          </ListItem>
+        <nav className="mt-7 grid gap-1">
+          {items.map((item) => {
+            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={closeSidebar}
+                className={`group flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-semibold transition-all duration-200 ${
+                  active
+                    ? "bg-brand-700 text-white shadow-lg shadow-brand-900/15"
+                    : "text-ink-600 hover:bg-brand-50 hover:text-brand-800"
+                }`}
+              >
+                <span
+                  className={`inline-flex size-10 items-center justify-center rounded-xl transition-colors ${
+                    active ? "bg-white/15 text-white" : "bg-white text-brand-700 ring-1 ring-ink-100 group-hover:ring-brand-100"
+                  }`}
+                >
+                  {item.icon}
+                </span>
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
 
-          <ListItem>
-            <ListItemButton role="menuitem" component="a" href="/chatbot">
-              <IconButton>
-                <SmsIcon />
-              </IconButton>
-              <ListItemContent>
-                <Typography className="font-poppins" level="title-sm">
-                  Chat Bot
-                </Typography>
-              </ListItemContent>
-            </ListItemButton>
-          </ListItem>
-
-          {user && isAdmin === true && (
-            <ListItem>
-              <ListItemButton role="menuitem" component="a" href="/verified">
-                <IconButton>
-                  <SupervisorAccountIcon />
-                </IconButton>
-                <ListItemContent>
-                  <Typography className="font-poppins" level="title-sm">
-                    Manage User
-                  </Typography>
-                </ListItemContent>
-              </ListItemButton>
-            </ListItem>
-          )}
-
-          {/* <ListItem>
-            <ListItemButton role="menuitem" component="a" href="/riwayat">
-              <IconButton>
-                <HistoryIcon />
-              </IconButton>
-              <ListItemContent>
-                <Typography level="title-sm">Riwayat Gambar</Typography>
-              </ListItemContent>
-            </ListItemButton>
-          </ListItem> */}
-
-          <ListItem>
-            <ListItemButton role="menuitem" component="a" href="/profile">
-              <IconButton>
-                <AccountCircleIcon />
-              </IconButton>
-              <ListItemContent>
-                <Typography className="font-poppins" level="title-sm">
-                  Profile
-                </Typography>
-              </ListItemContent>
-            </ListItemButton>
-          </ListItem>
-        </List>
-
-        <List
-          size="sm"
-          sx={{
-            mt: "auto",
-            flexGrow: 0,
-            "--ListItem-radius": (theme) => theme.vars.radius.sm,
-            "--List-gap": "8px",
-            mb: 2,
-          }}
-        ></List>
-      </Box>
-      <Divider />
-      {!user ? null : (
-        <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-          <Image
-            src={photoURL}
-            alt="profile"
-            width={30}
-            height={30}
-            className="rounded-full"
-          />
-          <Box sx={{ minWidth: 0, flex: 1 }}>
-            <div className="flex items-center">
-              <p className="-mt-1 text-base font-medium text-gray-900">
-                {user.displayName}
-              </p>
-              {userData?.verified ? (
-                <MdVerified size={18} className="mb-1 ml-1 text-[#00726B]" />
+        <div className="mt-auto rounded-2xl border border-ink-200 bg-white p-3 shadow-sm">
+          {!user ? null : (
+            <div className="flex items-center gap-3">
+              {user.photoURL ? (
+                <Image src={user.photoURL} alt="Foto profil" width={42} height={42} className="size-11 rounded-xl object-cover" />
               ) : (
-                ""
+                <div className="flex size-11 items-center justify-center rounded-xl bg-brand-50 text-sm font-bold text-brand-700">
+                  {(user.displayName || user.email || "U").slice(0, 1).toUpperCase()}
+                </div>
               )}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1">
+                  <p className="truncate text-sm font-semibold text-ink-950">{user.displayName || "Pengguna"}</p>
+                  {userData?.verified ? <MdVerified size={16} className="shrink-0 text-brand-600" /> : null}
+                </div>
+                <p className="truncate text-xs text-ink-500">{userData?.email || user.email}</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="inline-flex size-10 items-center justify-center rounded-xl text-ink-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                aria-label="Keluar"
+              >
+                <IoLogOutOutline size={22} />
+              </button>
             </div>
-            <Typography level="body-xs">{userData?.email}</Typography>
-            {/* <Typography level="body-xs">{isAdmin}</Typography> */}
-          </Box>
-          <IconButton size="sm" variant="plain" color="neutral">
-            <LogoutRoundedIcon onClick={handleSignOut} />
-          </IconButton>
-        </Box>
-      )}
-    </Sheet>
+          )}
+        </div>
+      </aside>
+
+      <button
+        className="Sidebar-overlay fixed inset-0 z-[9998] block bg-ink-950/35 opacity-[var(--SideNavigation-slideIn,0)] backdrop-blur-sm transition-all duration-300 md:hidden"
+        onClick={closeSidebar}
+        aria-label="Tutup sidebar"
+      />
+    </>
   );
 }

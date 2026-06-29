@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, ChangeEvent, useState, useCallback } from "react";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import Spinner from "@/components/Spinner";
 import CodeEditorWindow from "@/components/compiler/CodeEditorWindows";
 import Select from "react-select";
 import axios from "axios";
@@ -10,6 +10,7 @@ import MarkdownPreview from "@uiw/react-markdown-preview";
 import config from "@/lib/config";
 import { Button } from "@nextui-org/react";
 import { classnames } from "@/components/compiler/utils/general";
+import { SkeletonBlock, SkeletonLine } from "@/components/Skeleton";
 
 interface ModulData {
   id: number;
@@ -242,7 +243,7 @@ export default function DetailPage() {
         ) : (
         <div className="mt-5">
           <div className="grid grid-cols-2 gap-7 mb-5 bg-gray-100 px-5 py-3 outline outline-1 rounded-lg outline-gray-300">
-            <h1 className=" font-extrabold text-base md:text-2xl text-[#00726B]">
+            <h1 className=" font-extrabold text-base md:text-2xl text-brand-700">
               {detailModul.data.namaModul} :{" "}
               <span className="font-medium">{detailModul.data.judulModul}</span>
             </h1>
@@ -257,7 +258,7 @@ export default function DetailPage() {
                   <a href={pdfUrlWithParams} download="your-pdf-file.pdf">
                     <button
                       onClick={handleDownloadClick}
-                      className='block w-full bg-[#00726B] py-2 rounded-lg text-white font-semibold md:col-span-1"'
+                      className="block w-full bg-brand-700 py-2 rounded-lg text-white font-semibold md:col-span-1"
                     >
                       Download PDF
                     </button>
@@ -274,7 +275,7 @@ export default function DetailPage() {
           <div className=" mt-5">
             <div className="flex p-5 justify-between items-center">
               <div>
-                <h1 className="font-bold text-base md:text-2xl text-[#00726B]">
+                <h1 className="font-bold text-base md:text-2xl text-brand-700">
                   Compiler {detailModul.data.namaModul}
                 </h1>
                 <p className="text-gray-600 text-sm mt-2">
@@ -290,7 +291,7 @@ export default function DetailPage() {
                 )}
 
                 <select
-                  className="text-center text-[#00726B] font-semibold outline-none rounded-md font-poppins border border-gray-300 p-2"
+                  className="text-center text-brand-700 font-semibold outline-none rounded-md font-poppins border border-gray-300 p-2"
                   value={mode}
                   onChange={async (e) => {
                     setMode(e.target.value as "text" | "graph");
@@ -310,7 +311,7 @@ export default function DetailPage() {
                   disabled={!code || processing}
                   value={code}
                   className={classnames(
-                    "block w-56 bg-[#00726B] py-2 rounded-lg duration-500 text-white font-semibold md:col-span-1",
+                    "block w-56 bg-brand-700 py-2 rounded-lg duration-500 text-white font-semibold md:col-span-1",
                     !code ? "opacity-50" : ""
                   )}
                 >
@@ -331,7 +332,7 @@ export default function DetailPage() {
           </div>
 
           <div className="flex flex-col mt-5">
-            <h1 className="font-bold text-xl mb-2 text-[#00726B]">Output</h1>
+            <h1 className="font-bold text-xl mb-2 text-brand-700">Output</h1>
 
             {mode === "text" && (
               <div className="w-full h-96 bg-[#1E1E1E] text-green-500 font-normal text-sm overflow-y-auto p-4 rounded-lg">
@@ -344,7 +345,7 @@ export default function DetailPage() {
                 {shinyUrl && (
                   <div className="w-full border border-gray-300 rounded-lg overflow-hidden">
                     <div className="bg-gray-100 px-4 py-2 text-sm text-gray-600 flex justify-between items-center">
-                      <span>Shiny App running at <a href={shinyUrl} target="_blank" className="text-[#00726B] underline">{shinyUrl}</a></span>
+                      <span>Shiny App running at <a href={shinyUrl} target="_blank" className="text-brand-700 underline">{shinyUrl}</a></span>
                       <button
                         onClick={stopShiny}
                         className="px-3 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
@@ -360,10 +361,13 @@ export default function DetailPage() {
                   </div>
                 )}
                 {plotImage && (
-                  <img
+                  <Image
                     src={`data:image/png;base64,${plotImage}`}
                     alt="Plot output"
-                    className="max-w-full border border-gray-300 rounded-lg"
+                    width={1200}
+                    height={800}
+                    unoptimized
+                    className="h-auto max-w-full border border-gray-300 rounded-lg"
                   />
                 )}
                 {output && (
@@ -377,7 +381,13 @@ export default function DetailPage() {
         </div>
         )
       ) : (
-        <Spinner />
+        <div className="animate-pulse space-y-5 p-8">
+          <SkeletonBlock className="h-10 w-1/2" />
+          <SkeletonBlock className="h-4 w-3/4" />
+          <SkeletonBlock className="h-64 w-full" />
+          <SkeletonBlock className="h-8 w-1/3" />
+          <SkeletonBlock className="h-48 w-full" />
+        </div>
       )}
     </div>
   );

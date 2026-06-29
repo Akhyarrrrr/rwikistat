@@ -2,8 +2,9 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import axios from "axios";
-import VeriviedCard from "@/components/VeriviedCard";
+import VerifiedCard from "@/components/VerifiedCard";
 import config from "@/lib/config";
+import { SkeletonCard } from "@/components/Skeleton";
 
 function Verivied() {
   // Buat sebuah jenis yang mencerminkan struktur data dari API
@@ -22,30 +23,22 @@ function Verivied() {
     return () => {};
   }, []);
 
-  // Kemudian gunakan jenis ini untuk menentukan jenis state
   const [testData, setTestData] = useState<UserData[]>([]);
-  const [open, setOpen] = React.useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     try {
-      // Mendapatkan token dari localStorage atau sumber lainnya
+      setLoading(true);
       const storedToken = localStorage.getItem("customToken");
-
-      // Membuat header dengan menyertakan token
-      const headers = {
-        Authorization: `Bearer ${storedToken}`,
-      };
-      const response = await axios.get(`${config.API_URL}/api/user/`, {
-        headers,
-      });
+      const headers = { Authorization: `Bearer ${storedToken}` };
+      const response = await axios.get(`${config.API_URL}/api/user/`, { headers });
       if (response.status === 200) {
         setTestData(response.data);
-        console.log(response.data);
-      } else {
-        console.error("Gagal mengambil data:", response.statusText);
       }
     } catch (error) {
       console.error("Gagal mengambil data:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -58,22 +51,31 @@ function Verivied() {
   }, []);
 
   return (
-    <div className="px-4 md:px-7">
-      <div className="flex items-center justify-between h-16 mb-5">
-        <h2 className="font-bold text-2xl text-[#00726B] ">Manage User</h2>
+    <main className="rw-page">
+      <section className="rw-reveal flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="rw-kicker">Verified User</p>
+          <h1 className="rw-heading mt-2">Kelola pengguna terverifikasi.</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-600">
+            Verifikasi akun, cek profil publik, atau hapus user jika diperlukan.
+          </p>
+        </div>
         <Link href={`/verified/addUser`}>
-          <button
-            type="submit"
-            className=" w-full bg-[#00726B] py-2 px-10 rounded-lg hover:-translate-y-1 transition-all duration-500 text-white font-semibold mb-2"
-          >
+          <button type="button" className="btn-primary">
             Tambah User
           </button>
         </Link>
-      </div>
+      </section>
 
-      <div className="grid w-full grid-cols-1 gap-3 mx-auto md:grid-cols-3 ">
-        {testData.map((item) => (
-          <VeriviedCard
+      <div className="mt-7 grid w-full grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {loading ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+        : testData.length === 0 ? (
+          <div className="rw-card col-span-full p-12 text-center">
+            <p className="text-lg font-semibold text-ink-950">Belum ada user terverifikasi.</p>
+            <p className="mt-2 text-sm text-ink-500">User akan tampil setelah data tersedia.</p>
+          </div>
+        ) : testData.map((item) => (
+          <VerifiedCard
             key={item.id}
             profileImage={item.data.photoURL}
             name={item.data.displayName}
@@ -85,7 +87,7 @@ function Verivied() {
           />
         ))}
       </div>
-    </div>
+    </main>
   );
 }
 

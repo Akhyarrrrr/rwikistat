@@ -48,15 +48,20 @@ export default function Page() {
   };
 
   return (
-    <div className="flex items-center justify-center py-12 md:px-12">
-      <div className="w-full mx-auto bg-white">
-        <p className="py-2 px-9 text-2xl md:text-3xl font-extrabold text-[#00726B]">
-          Tambah User
+    <main className="rw-page max-w-3xl">
+      <section className="rw-reveal">
+        <p className="rw-kicker">User</p>
+        <h1 className="rw-heading mt-2">Tambah user baru.</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-600">
+          Buat akun email dan password untuk pengguna yang akan diverifikasi.
         </p>
-        <form className="py-6 px-9" onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 md:gap-5">
-            <div className="mb-5">
-              <label htmlFor="nama" className="block mb-3 text-base font-medium text-black">
+      </section>
+
+      <div className="rw-card mt-7 p-5 md:p-7">
+        <form className="space-y-5" onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div>
+              <label htmlFor="nama" className="mb-2 block text-sm font-semibold text-ink-800">
                 Nama User
               </label>
               <input
@@ -67,11 +72,11 @@ export default function Page() {
                 onChange={handleChange}
                 required
                 placeholder="Masukkan nama user"
-                className="w-full rounded-md border border-[#e0e0e0] py-3 px-6 text-base text-[#6B7280] outline-none focus:border-[#00726B] focus:shadow-md"
+                className="input-field"
               />
             </div>
-            <div className="mb-5">
-              <label htmlFor="email" className="block mb-3 text-base font-medium text-black">
+            <div>
+              <label htmlFor="email" className="mb-2 block text-sm font-semibold text-ink-800">
                 Email User
               </label>
               <input
@@ -82,12 +87,12 @@ export default function Page() {
                 onChange={handleChange}
                 required
                 placeholder="Masukkan email user"
-                className="w-full rounded-md border border-[#e0e0e0] py-3 px-6 text-base text-[#6B7280] outline-none focus:border-[#00726B] focus:shadow-md"
+                className="input-field"
               />
             </div>
           </div>
-          <div className="mb-5">
-            <label htmlFor="password" className="block mb-3 text-base font-medium text-black">
+          <div>
+            <label htmlFor="password" className="mb-2 block text-sm font-semibold text-ink-800">
               Password User
             </label>
             <input
@@ -98,11 +103,11 @@ export default function Page() {
               onChange={handleChange}
               required
               placeholder="Masukkan password user"
-              className="w-full rounded-md border border-[#e0e0e0] py-3 px-6 text-base text-[#6B7280] outline-none focus:border-[#00726B] focus:shadow-md"
+              className="input-field"
             />
           </div>
           {message && (
-            <p className={`mb-4 text-sm ${message.startsWith("Error") ? "text-red-500" : "text-green-600"}`}>
+            <p className={`rounded-xl border px-4 py-3 text-sm ${message.startsWith("Error") ? "border-red-200 bg-red-50 text-red-700" : "border-brand-200 bg-brand-50 text-brand-800"}`}>
               {message}
             </p>
           )}
@@ -110,13 +115,13 @@ export default function Page() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-md bg-[#00726B] py-3 px-8 text-center text-base font-semibold text-white outline-none hover:shadow-form"
+              className="btn-primary w-full py-3 text-base"
             >
               {loading ? "Menambahkan..." : "Tambah User Baru"}
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </main>
   );
 }

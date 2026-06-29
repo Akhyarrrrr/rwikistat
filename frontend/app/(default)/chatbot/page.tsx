@@ -1,5 +1,6 @@
 "use client";
-import React, { useState, useEffect, FormEvent, useRef } from "react";
+
+import React, { FormEvent, useEffect, useRef, useState } from "react";
 import { auth } from "@/lib/firebase";
 import { UserAuth } from "@/app/context/authContext";
 import config from "@/lib/config";
@@ -17,123 +18,132 @@ interface ChatData {
 
 const ChatBot = () => {
   useEffect(() => {
-    document.title = "Chat Bot | Rwikistat";
-    scrollToBottom();
-    return () => {};
+    document.title = "Chatbot | RWikiStat";
   }, []);
 
   const { user } = UserAuth();
   const [loading, setLoading] = useState(false);
   const [userMessage, setUserMessage] = useState("");
   const [chatData, setChatData] = useState<ChatData[]>([]);
+  const [error, setError] = useState("");
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    scrollToBottom(); // Memanggil fungsi untuk mengatur fokus pada percakapan terbaru setiap kali chatData berubah
-  }, [chatData]);
-
-  // Fungsi untuk mengatur fokus pada percakapan terbaru (di bagian bawah)
   const scrollToBottom = () => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollIntoView({
-        behavior: "auto",
-        block: "end",
-      });
-    }
+    chatContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   };
 
-  const fetchChatData = async () => {
-    // Chat is stateless — no server-side history. Start empty.
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatData, loading]);
+
+  useEffect(() => {
     setChatData([]);
-  };
+  }, [user]);
 
   const handleChatSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!userMessage.trim()) return;
+
     setLoading(true);
-    console.log("Submitting chat...");
-    const storedToken = localStorage.getItem("customToken");
-    // Dapatkan ID user
-    const user = auth.currentUser;
-    const userId = user?.uid;
-    console.log(userId);
-
-    const response = await fetch(`${config.API_URL}/api/chatbot/chat`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${storedToken}`,
-      },
-      body: JSON.stringify({ userMessage }),
-    });
-
-    const data = await response.json();
-
-    const newChat = {
-      id: Date.now().toString(),
-      userId: userId || "",
-      message: userMessage,
-      response: data.response || "Maaf, tidak ada respons.",
-      timestamp: { _seconds: Math.floor(Date.now() / 1000), _nanoseconds: 0 },
-    };
-    setChatData((prev) => [...prev, newChat]);
-    setLoading(false);
-
+    setError("");
+    const message = userMessage.trim();
     setUserMessage("");
+
+    try {
+      const storedToken = localStorage.getItem("customToken");
+      const currentUser = auth.currentUser;
+      const response = await fetch(`${config.API_URL}/api/chatbot/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${storedToken}`,
+        },
+        body: JSON.stringify({ userMessage: message }),
+      });
+      const data = await response.json();
+
+      const newChat = {
+        id: Date.now().toString(),
+        userId: currentUser?.uid || "",
+        message,
+        response: data.response || "Maaf, tidak ada respons.",
+        timestamp: { _seconds: Math.floor(Date.now() / 1000), _nanoseconds: 0 },
+      };
+      setChatData((prev) => [...prev, newChat]);
+    } catch {
+      setError("Gagal menghubungi chatbot. Pastikan backend dan API key aktif.");
+      setUserMessage(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => {
-    fetchChatData();
-  }, [user]);
-
   return (
-    <div className="flex flex-col justify-between items-center h-screen overflow-hidden">
-      <div className="flex flex-col overflow-y-auto p-4 w-full md:px-28">
-        <div className="flex flex-col gap-7">
-          {chatData.map((chat, index) => (
-            <div
-              key={chat.id}
-              className={`mb-10 ${
-                index === chatData.length - 1 ? "last-chat" : ""
-              }`}
-            >
-              <div className="flex justify-end mb-3">
-                <div className="bg-gray-400 text-white font-medium px-8 py-3 rounded-l-2xl text-end">
+    <main className="mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col px-4 py-5 md:px-7 md:py-7">
+      <section className="rw-reveal">
+        <p className="rw-kicker">RWikiChat</p>
+        <h1 className="rw-heading mt-2">Tanya konsep statistik tanpa meninggalkan modul.</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-600">
+          Chat ini stateless. Pertanyaan tidak disimpan di server, jadi tulis konteks yang cukup.
+        </p>
+      </section>
+
+      <section className="mt-6 min-h-0 flex-1 overflow-y-auto rounded-2xl border border-ink-200 bg-white p-4 shadow-sm md:p-6">
+        {chatData.length === 0 && !loading ? (
+          <div className="grid min-h-[360px] place-items-center text-center">
+            <div className="max-w-md">
+              <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-brand-50 font-mono text-xl font-bold text-brand-700">R</div>
+              <h2 className="mt-5 text-2xl font-semibold tracking-[-0.02em] text-ink-950">Mulai dari pertanyaan spesifik.</h2>
+              <p className="mt-3 text-sm leading-6 text-ink-600">
+                Contoh: jelaskan interpretasi p-value pada regresi linear dan beri contoh kode R sederhana.
+              </p>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="space-y-6">
+          {chatData.map((chat) => (
+            <div key={chat.id} className="space-y-3">
+              <div className="flex justify-end">
+                <div className="max-w-[82%] rounded-2xl rounded-tr-md bg-ink-900 px-5 py-3 text-sm leading-6 text-white shadow-sm">
                   {chat.message}
                 </div>
               </div>
-              <div className="flex">
-                <div className="bg-[#00726B] text-white px-8 py-3 rounded-r-2xl">
-                  <p>{chat.response}</p>
+              <div className="flex justify-start">
+                <div className="max-w-[88%] rounded-2xl rounded-tl-md bg-brand-50 px-5 py-3 text-sm leading-6 text-ink-800 ring-1 ring-brand-100">
+                  {chat.response}
                 </div>
               </div>
             </div>
           ))}
+
+          {loading ? (
+            <div className="flex items-center gap-2 rounded-2xl bg-brand-50 px-5 py-4 text-brand-700 ring-1 ring-brand-100">
+              <span className="size-2 animate-bounce rounded-full bg-brand-600" />
+              <span className="size-2 animate-bounce rounded-full bg-brand-600 [animation-delay:150ms]" />
+              <span className="size-2 animate-bounce rounded-full bg-brand-600 [animation-delay:300ms]" />
+            </div>
+          ) : null}
         </div>
-        <div ref={chatContainerRef}></div>
-      </div>
-      <div className="w-full bottom-0 bg-gray-50">
-        <form
-          className="max-w-screen-lg m-auto w-full p-4 flex space-x-4 justify-center items-center"
-          onSubmit={handleChatSubmit}
-        >
-          <input
-            value={userMessage}
-            onChange={(e) => setUserMessage(e.target.value)}
-            type="text"
-            autoComplete="off"
-            className="border rounded-md p-2 flex-1 border-gray-300"
-            placeholder="Masukkan pesan Anda..."
-          />
-          <button
-            className="bg-gray-800 text-white px-4 py-2 rounded-md"
-            type="submit"
-            disabled={loading}
-          >
-            {loading ? "Sending..." : "Send"}
-          </button>
-        </form>
-      </div>
-    </div>
+        <div ref={chatContainerRef} />
+      </section>
+
+      {error ? <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+
+      <form className="mt-4 flex gap-3 rounded-2xl border border-ink-200 bg-white p-3 shadow-lg shadow-ink-950/5" onSubmit={handleChatSubmit}>
+        <input
+          value={userMessage}
+          onChange={(e) => setUserMessage(e.target.value)}
+          type="text"
+          autoComplete="off"
+          className="min-w-0 flex-1 rounded-xl border border-transparent bg-ink-50 px-4 py-3 text-sm text-ink-900 outline-none transition-colors placeholder:text-ink-400 focus:border-brand-300 focus:bg-white"
+          placeholder="Tulis pertanyaan statistik atau error R..."
+        />
+        <button className="btn-primary min-w-24" type="submit" disabled={loading || !userMessage.trim()}>
+          {loading ? "Kirim..." : "Kirim"}
+        </button>
+      </form>
+    </main>
   );
 };
 

@@ -24,7 +24,7 @@ interface VeriviedData {
   onDelete: (id: number) => void;
 }
 
-const VeriviedCard = ({
+const VerifiedCard = ({
   profileImage,
   name,
   email,
@@ -66,37 +66,41 @@ const VeriviedCard = ({
   };
 
   return (
-    <div className="flex items-center justify-between p-4 bg-white border rounded-lg shadow-md">
-      <Link href={link} className="flex">
-        <div className="mr-2">
+    <div className="rw-card flex items-center justify-between gap-4 p-4 transition-all duration-200 hover:-translate-y-1 hover:border-brand-200 hover:shadow-lg">
+      <Link href={link} className="flex min-w-0 items-center gap-3">
+        {profileImage ? (
           <Image
             src={profileImage}
-            className="rounded-full"
+            className="rounded-xl object-cover"
             alt="profile"
             width={52}
             height={52}
           />
-        </div>
-        <div className="items-center justify-between">
+        ) : (
+          <div className="flex size-[52px] items-center justify-center rounded-xl bg-brand-50 font-semibold text-brand-700">
+            {(name || "U").slice(0, 1).toUpperCase()}
+          </div>
+        )}
+        <div className="min-w-0">
           <div className="flex items-center">
-            <p className="-mt-1 text-lg font-semibold text-gray-900">{name}</p>
+            <p className="truncate text-sm font-semibold text-ink-950">{name}</p>
             {verified ? (
-              <MdVerified size={18} className="mb-1 ml-1 text-[#00726B]" />
+              <MdVerified size={18} className="ml-1 shrink-0 text-brand-600" />
             ) : (
               ""
             )}
           </div>
-          <p className="text-sm text-gray-700">{email}</p>
+          <p className="truncate text-xs text-ink-500">{email}</p>
         </div>
       </Link>
-      <div className="flex gap-2">
+      <div className="flex shrink-0 gap-2">
         <Button
           size="sm"
-          variant="plain"
+          variant="soft"
           color="success"
           onClick={() => setOpenVerify(true)}
         >
-          Verified
+          Verify
         </Button>
         <Button
           size="sm"
@@ -171,4 +175,4 @@ const VeriviedCard = ({
   );
 };
 
-export default VeriviedCard;
+export default VerifiedCard;

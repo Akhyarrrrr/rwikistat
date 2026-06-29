@@ -18,7 +18,7 @@ const Pagination = ({
   const nextPage = currentPage + 1;
 
   return (
-    <div className="flex justify-center gap-2">
+    <div className="mt-6 flex flex-wrap justify-center gap-2">
       {previousPage > 0 ? (
         <PaginationButton
           onClick={() => onPageChange(previousPage)}

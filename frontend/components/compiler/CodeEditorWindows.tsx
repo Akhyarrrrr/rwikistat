@@ -19,9 +19,23 @@ const CodeEditorWindow = ({ onChange, language, code, theme, defaultValue }: Pro
   };
 
   return (
-    <div className="overlay overflow-hidden w-full h-full shadow-4xl">
-      <Editor height="65vh" width="100%" language={language} value={value} theme={theme} defaultValue={defaultValue}
-        onChange={handleEditorChange} options={{ fontSize: 14 }} />
+    <div className="overflow-hidden rounded-2xl border border-ink-800 bg-ink-950 shadow-2xl shadow-ink-950/20">
+      <Editor
+        height="58vh"
+        width="100%"
+        language={language}
+        value={value}
+        theme={theme}
+        defaultValue={defaultValue}
+        onChange={handleEditorChange}
+        options={{
+          fontFamily: "var(--font-geist-mono)",
+          fontSize: 14,
+          minimap: { enabled: false },
+          padding: { top: 18, bottom: 18 },
+          scrollBeyondLastLine: false,
+        }}
+      />
     </div>
   );
 };
