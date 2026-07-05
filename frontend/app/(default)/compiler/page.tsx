@@ -13,6 +13,8 @@ const CodeEditor = () => {
   const [code, setCode] = useState("");
   const [output, setOutput] = useState("");
   const [plotImage, setPlotImage] = useState<string | null>(null);
+  const [saveName, setSaveName] = useState("");
+  const [saveMessage, setSaveMessage] = useState("");
   const [shinyUrl, setShinyUrl] = useState<string | null>(null);
   const [shinySessionId, setShinySessionId] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
@@ -86,6 +88,29 @@ const CodeEditor = () => {
       setErrorMsg("Gagal terhubung ke server. Pastikan backend sedang berjalan.");
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleSaveGraph = async () => {
+    if (!plotImage || !saveName.trim()) return;
+    try {
+      setSaveMessage("");
+      const blob = await (await fetch(`data:image/png;base64,${plotImage}`)).blob();
+      const formData = new FormData();
+      formData.append("image", blob, `${saveName.trim()}.png`);
+      formData.append("fileName", saveName.trim());
+      const storedToken = localStorage.getItem("customToken");
+      const response = await fetch(`${config.API_URL}/api/history`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${storedToken}` },
+        body: formData,
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Gagal menyimpan grafik.");
+      setSaveMessage("Grafik tersimpan ke riwayat.");
+      setSaveName("");
+    } catch (error: any) {
+      setSaveMessage(error.message || "Gagal menyimpan grafik.");
     }
   };
 
@@ -174,14 +199,28 @@ const CodeEditor = () => {
         ) : null}
 
         {plotImage ? (
-          <Image
-            src={`data:image/png;base64,${plotImage}`}
-            alt="Output grafik"
-            width={1200}
-            height={800}
-            unoptimized
-            className="mb-4 h-auto max-w-full rounded-2xl border border-ink-200 bg-white shadow-sm"
-          />
+          <div className="mb-4 space-y-3">
+            <Image
+              src={`data:image/png;base64,${plotImage}`}
+              alt="Output grafik"
+              width={1200}
+              height={800}
+              unoptimized
+              className="h-auto max-w-full rounded-2xl border border-ink-200 bg-white shadow-sm"
+            />
+            <div className="rw-card flex flex-col gap-3 p-3 sm:flex-row">
+              <input
+                value={saveName}
+                onChange={(event) => setSaveName(event.target.value)}
+                className="input-field"
+                placeholder="Nama file riwayat"
+              />
+              <button type="button" className="btn-primary min-w-36" onClick={handleSaveGraph} disabled={!saveName.trim()}>
+                Simpan
+              </button>
+            </div>
+            {saveMessage ? <p className="text-sm font-medium text-brand-700">{saveMessage}</p> : null}
+          </div>
         ) : null}
 
         {(option === "string" || output) && !shinyUrl ? (

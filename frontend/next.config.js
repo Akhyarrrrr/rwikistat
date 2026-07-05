@@ -30,14 +30,7 @@ const nextConfig = {
     ],
   },
 
-  webpack(config) {
-    config.module.rules.push({
-      test: /canvas.node$/,
-      use: "raw-loader",
-    });
-
-    return config;
-  },
+  turbopack: {},
 };
 
 module.exports = nextConfig;

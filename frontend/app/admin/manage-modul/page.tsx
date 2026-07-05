@@ -2,7 +2,6 @@
 export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
-import { UserAuth } from "../../context/authContext";
 import config from "@/lib/config";
 import Typography from "@mui/joy/Typography";
 import Button from "@mui/joy/Button";
@@ -20,7 +19,6 @@ interface Module {
 }
 
 export default function ManageModul() {
-  const { user } = UserAuth();
   const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(true);
 

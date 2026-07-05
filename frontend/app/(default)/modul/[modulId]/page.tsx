@@ -1,19 +1,17 @@
 "use client";
-import React, { useEffect, ChangeEvent, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import CodeEditorWindow from "@/components/compiler/CodeEditorWindows";
-import Select from "react-select";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import MarkdownPreview from "@uiw/react-markdown-preview";
 import config from "@/lib/config";
-import { Button } from "@nextui-org/react";
 import { classnames } from "@/components/compiler/utils/general";
-import { SkeletonBlock, SkeletonLine } from "@/components/Skeleton";
+import { SkeletonBlock } from "@/components/Skeleton";
 
 interface ModulData {
-  id: number;
+  id: string | number;
   data: {
     namaModul: string;
     codeSampel: string;
@@ -22,8 +20,16 @@ interface ModulData {
   };
 }
 
-interface DropdownProps {
-  options: string[];
+interface DetailModul extends ModulData {
+  data: ModulData["data"] & {
+    pdfPath: string;
+    isLocked?: boolean;
+  };
+}
+
+interface ModuleOption {
+  label: string;
+  value: string | number;
 }
 
 export default function DetailPage() {
@@ -34,31 +40,17 @@ export default function DetailPage() {
 
   const pathname = usePathname();
   const modulId = pathname.split("/")[2];
-  const [loading, setLoading] = useState(true);
-  const [pdfData, setPdfData] = useState(null);
-  const [detailModul, setDetailModul] = useState<any>(null);
+  const [detailModul, setDetailModul] = useState<DetailModul | null>(null);
   const [pdfUrl, setPdfUrl] = useState("");
-  const [theme, setTheme] = useState("amy");
   const router = useRouter();
-  const [postContent, setPostContent] = useState("");
   const [output, setOutput] = useState("");
   const [plotImage, setPlotImage] = useState<string | null>(null);
   const [shinyUrl, setShinyUrl] = useState<string | null>(null);
   const [shinySessionId, setShinySessionId] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-
-  const language = {
-    id: 80,
-    name: "R (4.0.0)",
-    label: "R (4.0.0)",
-    value: "r",
-  };
 
   const [testData, setTestData] = useState<ModulData[]>([]);
-  const [response, setResponse] = useState("");
-  const defaultCode = detailModul?.data?.codeSampel || "";
-  const [code, setCode] = useState<string>(defaultCode);
+  const [code, setCode] = useState("");
   const pdfUrlWithParams = `${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`;
   const [downloadClicked, setDownloadClicked] = useState(false);
 
@@ -78,6 +70,7 @@ export default function DetailPage() {
         .then((data) => {
           setDetailModul(data);
           setPdfUrl(data.data.pdfPath);
+          setCode(data.data.codeSampel || "");
         })
         .catch((error) => {
           console.error("Gagal mengambil data detail modul:", error);
@@ -121,19 +114,19 @@ export default function DetailPage() {
     fetchData();
   }, []);
 
-  const options = testData
+  const options: ModuleOption[] = testData
     .map((module) => ({
       label: module.data.namaModul,
       value: module.id,
     }))
-    .sort((a: any, b: any) => {
-      const numA = parseInt(a.label.match(/\d+/));
-      const numB = parseInt(b.label.match(/\d+/));
+    .sort((a, b) => {
+      const numA = parseInt(a.label.match(/\d+/)?.[0] || "0", 10);
+      const numB = parseInt(b.label.match(/\d+/)?.[0] || "0", 10);
       return numA - numB;
     });
 
-  const handleChange = (selectedOption: any) => {
-    router.push(`/modul/${selectedOption.value}`);
+  const handleChange = (value: string) => {
+    router.push(`/modul/${value}`);
   };
 
   const handleCodeChange = (action: any, data: string) => {
@@ -248,11 +241,19 @@ export default function DetailPage() {
               <span className="font-medium">{detailModul.data.judulModul}</span>
             </h1>
             <div className="grid grid-cols-2 gap-3">
-              <Select
-                placeholder="Pilih Modul"
-                options={options}
-                onChange={handleChange}
-              />
+              <select
+                aria-label="Pilih modul"
+                defaultValue=""
+                onChange={(e) => e.target.value && handleChange(e.target.value)}
+                className="input-field py-2"
+              >
+                <option value="" disabled>Pilih Modul</option>
+                {options.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
               <div>
                 {pdfUrl && !downloadClicked && (
                   <a href={pdfUrlWithParams} download="your-pdf-file.pdf">
@@ -286,10 +287,6 @@ export default function DetailPage() {
               </div>
 
               <div className="flex gap-3 items-center">
-                {errorMessage && (
-                  <p className="text-red-600 text-sm">{errorMessage}</p>
-                )}
-
                 <select
                   className="text-center text-brand-700 font-semibold outline-none rounded-md font-poppins border border-gray-300 p-2"
                   value={mode}
@@ -306,7 +303,7 @@ export default function DetailPage() {
                   <option value="graph">Graph Compiler</option>
                 </select>
 
-                <Button
+                <button
                   onClick={mode === "text" ? handleRunString : handleRunGraph}
                   disabled={!code || processing}
                   value={code}
@@ -316,7 +313,7 @@ export default function DetailPage() {
                   )}
                 >
                   {processing ? "Processing..." : "Run"}
-                </Button>
+                </button>
               </div>
             </div>
 

@@ -52,6 +52,7 @@ backend/.firebaserc
 # AI tooling
 .claude/
 AGENTS.md
+CLAUDE.md
 
 # runtime artifacts (generated at runtime, not committed)
 backend/server.err

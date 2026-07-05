@@ -16,7 +16,7 @@ import LinkButton from "@/components/LinkButton";
 interface ForumData {
   id: string;
   data: {
-    email: string;
+    uid: string;
     topics: string;
     title: string;
     images: string[];
@@ -30,7 +30,7 @@ interface ForumData {
     displayName: string;
     photoURL: string;
     verified: boolean;
-    email: string;
+    uid: string;
   };
   commentCount: number;
 }
@@ -107,7 +107,7 @@ export default function Search() {
 
         {!loading && results.map((result) => (
           <article key={result.id} className="rw-card p-5 transition-all duration-200 hover:-translate-y-1 hover:border-brand-200 hover:shadow-lg">
-            <Link href={`userId/${result.data.email}`} className="flex items-center gap-3">
+            <Link href={`userId/${result.user.uid || result.data.uid}`} className="flex items-center gap-3">
               <Avatar src={result.user.photoURL} name={result.user.displayName} />
               <div className="min-w-0">
                 <div className="flex items-center gap-1">

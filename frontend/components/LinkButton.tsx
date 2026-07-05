@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { BiLink } from "react-icons/bi";
 import Snackbar from "@mui/joy/Snackbar";
 
 const LinkButton: React.FC<{ itemId: string }> = ({ itemId }) => {
   const [open, setOpen] = React.useState(false);
-  const [duration, setDuration] = React.useState<undefined | number>(3000);
+  const duration = 3000;
   const [left, setLeft] = React.useState<undefined | number>();
-  const timer = React.useRef<undefined | number>();
+  const timer = React.useRef<undefined | number>(undefined);
   const countdown = () => {
     timer.current = window.setInterval(() => {
       setLeft((prev) => (prev === undefined ? prev : Math.max(0, prev - 100)));
@@ -19,7 +19,7 @@ const LinkButton: React.FC<{ itemId: string }> = ({ itemId }) => {
     } else {
       window.clearInterval(timer.current);
     }
-  }, [open, duration]);
+  }, [open]);
   const handlePause = () => { window.clearInterval(timer.current); };
   const handleResume = () => { countdown(); };
 

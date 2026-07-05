@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@config "../tailwind.config.js";
+@import "tailwindcss";
 
 html {
   scroll-behavior: smooth;
@@ -14,9 +13,7 @@ html {
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background:
-    linear-gradient(180deg, rgba(232, 248, 244, 0.65), rgba(248, 250, 249, 0) 34rem),
-    #f8faf9;
+  background: #f8faf9;
 }
 
 a,
@@ -38,7 +35,7 @@ select {
   .stagger-8 { animation-delay: 0.4s; }
 
   .shimmer-bg {
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background: linear-gradient(90deg, #eef2f1 25%, #dbe3e1 50%, #eef2f1 75%);
     background-size: 200% 100%;
     animation: shimmer 2s infinite linear;
   }
@@ -47,7 +44,30 @@ select {
     @apply transition-all duration-200 ease-out;
   }
   .card-hover:hover {
-    @apply -translate-y-0.5 shadow-lg;
+    @apply -translate-y-0.5 shadow-lg shadow-brand-950/8;
+  }
+
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-500/20 focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+  }
+
+  .grain-overlay::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.015;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 256px 256px;
+    z-index: 9999;
+  }
+
+  .empty-state {
+    @apply flex flex-col items-center justify-center rounded-2xl border border-dashed border-ink-200 bg-white/50 px-6 py-14 text-center;
+  }
+  .empty-state-icon {
+    @apply mb-4 inline-flex size-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-500 ring-1 ring-brand-100;
   }
 
   .btn-primary {
@@ -67,11 +87,11 @@ select {
   }
 
   .rw-card {
-    @apply rounded-2xl border border-ink-200/80 bg-white shadow-sm shadow-ink-900/5;
+    @apply rounded-2xl border border-ink-200/80 bg-white shadow-sm shadow-brand-950/5;
   }
 
   .rw-panel {
-    @apply rounded-2xl border border-white/70 bg-white/85 shadow-xl shadow-brand-950/5 backdrop-blur;
+    @apply rounded-2xl border border-white/70 bg-white/90 shadow-xl shadow-brand-950/5 backdrop-blur;
   }
 
   .rw-kicker {
@@ -94,22 +114,18 @@ select {
     animation: fadeUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
-  .rw-surface-grid {
-    background-image:
-      linear-gradient(rgba(7, 63, 59, 0.06) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(7, 63, 59, 0.06) 1px, transparent 1px);
-    background-size: 48px 48px;
-    background-position: -1px -1px;
-  }
-
   .font-poppins {
-    font-family: var(--font-geist-sans), system-ui, sans-serif;
+    font-family: var(--font-body), system-ui, sans-serif;
   }
 }
 
 @layer base {
   * {
     @apply border-ink-200;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display), system-ui, sans-serif;
   }
 }
 

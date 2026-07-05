@@ -1,4 +1,7 @@
-const admin = require("firebase-admin");
+const { cert, getApps, initializeApp } = require("firebase-admin/app");
+const { FieldValue, getFirestore } = require("firebase-admin/firestore");
+const { getStorage } = require("firebase-admin/storage");
+const { getAuth } = require("firebase-admin/auth");
 const fs = require("fs");
 const path = require("path");
 const dotenv = require("dotenv");
@@ -6,6 +9,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 let initialized = false;
+let app = null;
 
 function findServiceAccountFile() {
   const files = fs.readdirSync(__dirname);
@@ -20,8 +24,8 @@ const serviceAccountPath = findServiceAccountFile();
 if (serviceAccountPath) {
   try {
     const serviceAccount = require(serviceAccountPath);
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
+    app = getApps()[0] || initializeApp({
+      credential: cert(serviceAccount),
       databaseURL: process.env.FIREBASE_DATABASE_URL,
       storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
     });
@@ -43,8 +47,8 @@ if (serviceAccountPath) {
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
         privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
       };
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
+      app = getApps()[0] || initializeApp({
+        credential: cert(serviceAccount),
         databaseURL: process.env.FIREBASE_DATABASE_URL,
         storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
       });
@@ -58,8 +62,12 @@ if (serviceAccountPath) {
   }
 }
 
-const firestore = initialized ? admin.firestore() : null;
-const storage = initialized ? admin.storage() : null;
-const auth = initialized ? admin.auth() : null;
+const firestore = initialized ? getFirestore(app) : null;
+const storage = initialized ? getStorage(app) : null;
+const auth = initialized ? getAuth(app) : null;
+const admin = {
+  auth: () => auth,
+  firestore: { FieldValue },
+};
 
 module.exports = { admin, firestore, storage, auth };

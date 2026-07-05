@@ -13,7 +13,7 @@ const Pagination = ({
   currentPage,
   totalPages,
   onPageChange,
-}: PaginationProps): JSX.Element => {
+}: PaginationProps) => {
   const previousPage = currentPage - 1;
   const nextPage = currentPage + 1;
 
@@ -30,9 +30,7 @@ const Pagination = ({
       ) : (
         <PaginationButton
           disabled={true}
-          onClick={function (): void {
-            throw new Error("Function not implemented.");
-          }}
+          onClick={() => {}}
           active={false}
         >
           Previous
@@ -61,9 +59,7 @@ const Pagination = ({
       ) : (
         <PaginationButton
           disabled={true}
-          onClick={function (): void {
-            throw new Error("Function not implemented.");
-          }}
+          onClick={() => {}}
           active={false}
         >
           Next

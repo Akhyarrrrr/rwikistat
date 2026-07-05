@@ -3,6 +3,7 @@ const { admin, storage, firestore } = require("../adminConfig");
 const multer = require("multer");
 const router = express.Router();
 const verifyToken = require("../middleware/verifyToken");
+const requireAdmin = require("../middleware/requireAdmin");
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -13,7 +14,7 @@ const upload = multer({
   },
 }).single("pdfFile");
 
-router.post("/", verifyToken, (req, res) => {
+router.post("/", verifyToken, requireAdmin, (req, res) => {
   upload(req, res, async (err) => {
     if (err instanceof multer.MulterError) {
       return res.status(400).json({ error: err.message });
@@ -70,7 +71,7 @@ router.get("/:id", verifyToken, async (req, res) => {
   }
 });
 
-router.delete("/:id", verifyToken, async (req, res) => {
+router.delete("/:id", verifyToken, requireAdmin, async (req, res) => {
   try {
     const doc = await firestore.collection("modul").doc(req.params.id).get();
     if (!doc.exists) return res.status(404).json({ error: "Data tidak ditemukan." });

@@ -2,13 +2,10 @@ const express = require("express");
 const router = express.Router();
 const { firestore, admin } = require("../adminConfig");
 const verifyToken = require("../middleware/verifyToken");
+const requireAdmin = require("../middleware/requireAdmin");
 
-router.post("/:uid", verifyToken, async (req, res) => {
+router.post("/:uid", verifyToken, requireAdmin, async (req, res) => {
   try {
-    const callerDoc = await firestore.collection("users").doc(req.user.uid).get();
-    if (!callerDoc.exists || callerDoc.data().role !== "admin") {
-      return res.status(403).json({ error: "Akses ditolak. Hanya untuk admin." });
-    }
     await firestore.collection("users").doc(req.params.uid).update({ verified: true });
     res.json({ message: "User verified successfully" });
   } catch (error) {
@@ -101,7 +98,7 @@ router.get("/:uid/score", async (req, res) => {
   }
 });
 
-router.delete("/:uid", verifyToken, async (req, res) => {
+router.delete("/:uid", verifyToken, requireAdmin, async (req, res) => {
   try {
     await firestore.collection("users").doc(req.params.uid).delete();
     await admin.auth().deleteUser(req.params.uid);

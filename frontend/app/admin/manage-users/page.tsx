@@ -2,7 +2,6 @@
 export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
-import { UserAuth } from "../../context/authContext";
 import config from "@/lib/config";
 import Typography from "@mui/joy/Typography";
 import Button from "@mui/joy/Button";
@@ -22,7 +21,6 @@ interface User {
 }
 
 export default function ManageUsers() {
-  const { user } = UserAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -78,7 +76,7 @@ export default function ManageUsers() {
         <Typography level="h2" sx={{ color: "#007a70", fontWeight: 700 }}>
           Manage Users
         </Typography>
-        <Link href="/verified/addUser">
+        <Link href="/admin/add-user">
           <Button size="sm" sx={{ bgcolor: "#007a70" }}>
             Tambah User
           </Button>

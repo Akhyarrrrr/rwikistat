@@ -93,7 +93,7 @@ export default function DetailPage() {
     <main className="rw-page max-w-4xl">
       {detailForum ? (
         <article className="rw-card p-5 md:p-6">
-          <Link href={`/userId/${detailForum.data.uid || ""}`} className="flex items-center gap-3">
+          <Link href={`/profile/${detailForum.data.uid || ""}`} className="flex items-center gap-3">
             <Avatar src={detailForum.user.photoURL} name={detailForum.user.displayName} />
             <div className="min-w-0">
               <div className="flex items-center gap-1">

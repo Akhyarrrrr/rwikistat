@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Editor from "@monaco-editor/react";
 
 interface Props {
@@ -12,6 +12,10 @@ interface Props {
 
 const CodeEditorWindow = ({ onChange, language, code, theme, defaultValue }: Props) => {
   const [value, setValue] = useState(code || "");
+
+  useEffect(() => {
+    setValue(code || "");
+  }, [code]);
 
   const handleEditorChange = (value: string | undefined) => {
     setValue(value || "");
@@ -29,7 +33,7 @@ const CodeEditorWindow = ({ onChange, language, code, theme, defaultValue }: Pro
         defaultValue={defaultValue}
         onChange={handleEditorChange}
         options={{
-          fontFamily: "var(--font-geist-mono)",
+          fontFamily: "var(--font-mono)",
           fontSize: 14,
           minimap: { enabled: false },
           padding: { top: 18, bottom: 18 },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import axios from "axios";
 import { auth } from "@/lib/firebase";
 import { BiBookmark, BiSolidBookmark } from "react-icons/bi";
@@ -6,7 +6,6 @@ import config from "@/lib/config";
 
 const Bookmark: React.FC<{ itemId: string }> = ({ itemId }) => {
   const [bookmarkButton, setBookmarkButton] = React.useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Periksa apakah pengguna telah menyukai postingan
@@ -38,16 +37,12 @@ const Bookmark: React.FC<{ itemId: string }> = ({ itemId }) => {
 
         if (response.status === 200) {
           setBookmarkButton(response.data.isBookmarked);
-          // console.log(response.data.isLiked);
-          setIsLoading(false);
         }
       } else {
         // Pengguna belum masuk, jangan lakukan apa-apa
-        setIsLoading(false);
       }
     } catch (error) {
       console.error("Gagal mengambil bookmark:", error);
-      setIsLoading(false);
     }
   };
 

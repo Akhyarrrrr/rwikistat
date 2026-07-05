@@ -49,7 +49,6 @@ const LoginForm = () => {
 
   return (
     <main className="relative min-h-[100dvh] overflow-hidden bg-ink-50">
-      <div className="absolute inset-0 rw-surface-grid opacity-70" aria-hidden="true" />
       <div className="relative mx-auto grid min-h-[100dvh] max-w-6xl items-center gap-10 px-4 py-10 md:grid-cols-[0.95fr_1.05fr] md:px-6">
         <section className="hidden md:block">
           <Link href="/" className="inline-flex rounded-2xl bg-white p-2 ring-1 ring-ink-100">

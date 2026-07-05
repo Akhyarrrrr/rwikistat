@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import axios from "axios";
 import { auth } from "@/lib/firebase";
 import { BiSolidLike, BiLike } from "react-icons/bi";
@@ -6,7 +6,6 @@ import config from "@/lib/config";
 
 const LikeButton: React.FC<{ itemId: string }> = ({ itemId }) => {
   const [likedButton, setLikedButton] = React.useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Periksa apakah pengguna telah menyukai postingan
@@ -38,16 +37,12 @@ const LikeButton: React.FC<{ itemId: string }> = ({ itemId }) => {
 
         if (response.status === 200) {
           setLikedButton(response.data.isLiked);
-          // console.log(response.data.isLiked);
-          setIsLoading(false);
         }
       } else {
         // Pengguna belum masuk, jangan lakukan apa-apa
-        setIsLoading(false);
       }
     } catch (error) {
       console.error("Gagal mengambil like:", error);
-      setIsLoading(false);
     }
   };
 

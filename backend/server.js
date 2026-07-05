@@ -1,5 +1,4 @@
 const express = require("express");
-const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
 const dotenv = require("dotenv");
@@ -15,7 +14,8 @@ app.set("views", path.join(__dirname, "views"));
 const PORT = process.env.PORT || 8080;
 
 app.use(cors({ origin: "*" }));
-app.use(bodyParser.json());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 require("events").EventEmitter.defaultMaxListeners = 15;
 
@@ -95,9 +95,6 @@ app.use("/api/chatbot", chatBot);
 
 const userApi = require("./routes/user");
 app.use("/api/user", userApi);
-
-const historyApi = require("./routes/history");
-app.use("/api/history", historyApi);
 
 const shinyApi = require("./routes/shiny");
 app.use("/api/shiny", shinyApi);

@@ -10,7 +10,19 @@ import Sheet from "@mui/joy/Sheet";
 import Link from "next/link";
 
 function AdminShell({ children }: { children: React.ReactNode }) {
-  const { user, userData } = UserAuth();
+  const { user, userData, loading } = UserAuth();
+
+  React.useEffect(() => {
+    localStorage.removeItem("adminLearningMode");
+  }, []);
+
+  if (loading) {
+    return (
+      <Box sx={{ minHeight: "100dvh", display: "grid", placeItems: "center", bgcolor: "#f8faf9" }}>
+        <Typography>Memuat sesi...</Typography>
+      </Box>
+    );
+  }
 
   if (!user) {
     return (
@@ -62,9 +74,13 @@ function AdminShell({ children }: { children: React.ReactNode }) {
           </Typography>
         </Link>
         <Box sx={{ flex: 1 }} />
-        <Link href="/" style={{ textDecoration: "none", color: "inherit" }}>
+        <Link
+          href="/compiler"
+          onClick={() => localStorage.setItem("adminLearningMode", "true")}
+          style={{ textDecoration: "none", color: "inherit" }}
+        >
           <Typography level="body-sm" sx={{ py: 1, px: 1, borderRadius: "sm", "&:hover": { bgcolor: "background.level1" } }}>
-            &larr; Kembali ke Aplikasi
+            Mode belajar
           </Typography>
         </Link>
       </Sheet>

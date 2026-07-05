@@ -12,7 +12,6 @@ export default function Page() {
   }, []);
 
   const [codeSampel, setCodeSampel] = useState("");
-  const [textMarkdown, setTextMarkdown] = useState("");
   const [namaModul, setNamaModul] = useState("");
   const [judulModul, setJudulModul] = useState("");
   const [urlShiny, setUrlShiny] = useState("");
@@ -41,7 +40,7 @@ export default function Page() {
     formData.append("judulModul", judulModul);
     formData.append("urlShiny", urlShiny);
     formData.append("textData", textData);
-    formData.append("textMarkdown", textMarkdown);
+    formData.append("textMarkdown", textData);
 
     try {
       // Mendapatkan token dari localStorage atau sumber lainnya
@@ -175,7 +174,7 @@ export default function Page() {
                 defaultValue="# Add some markdown text here"
                 onChange={(value) => setTextData(value || "")}
                 options={{
-                  fontFamily: "var(--font-geist-mono)",
+                  fontFamily: "var(--font-mono)",
                   fontSize: 14,
                   minimap: { enabled: false },
                   padding: { top: 16, bottom: 16 },

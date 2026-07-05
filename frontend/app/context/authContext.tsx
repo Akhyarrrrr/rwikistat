@@ -7,12 +7,10 @@ import React, {
   ReactNode,
 } from "react";
 import {
-  signInWithPopup,
   signOut,
   signInWithEmailAndPassword,
   UserCredential,
   onAuthStateChanged,
-  GoogleAuthProvider,
   IdTokenResult,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -24,12 +22,14 @@ interface User {
   displayName: string | null;
   photoURL: string | null;
   getIdTokenResult: () => Promise<IdTokenResult>;
+  getIdToken: () => Promise<string>;
 }
 
 interface AuthContextType {
   user: User | null;
   userData: any;
-  googleSignIn: () => Promise<void>;
+  loading: boolean;
+  isAdmin: boolean;
   emailSignIn: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, displayName: string) => Promise<{ uid: string } | null>;
   logOut: () => Promise<void>;
@@ -50,6 +50,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   const fetchUserData = async (idToken: string) => {
     try {
@@ -64,10 +65,12 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
         if (typeof window !== "undefined") {
           localStorage.setItem("userData", JSON.stringify(data));
         }
+        return data;
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
     }
+    return null;
   };
 
   const register = async (email: string, password: string, displayName: string) => {
@@ -88,28 +91,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
     }
   };
 
-  const googleSignIn = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      const result: UserCredential = await signInWithPopup(auth, provider);
-      const signedInUser = result.user;
-      setUser(signedInUser);
-
-      const idToken = await signedInUser.getIdToken();
-      if (typeof window !== "undefined") {
-        localStorage.setItem("customToken", idToken);
-      }
-
-      await fetchUserData(idToken);
-      window.location.href = "/compiler";
-    } catch (error) {
-      const authError = error as Error;
-      console.error("Gagal masuk dengan Google:", authError.message);
-    }
-  };
-
   const emailSignIn = async (email: string, password: string) => {
-    console.log("emailSignIn called with email:", JSON.stringify(email), "len:", email.length);
     try {
       const result: UserCredential = await signInWithEmailAndPassword(
         auth,
@@ -124,8 +106,8 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
         localStorage.setItem("customToken", idToken);
       }
 
-      await fetchUserData(idToken);
-      window.location.href = "/compiler";
+      const data = await fetchUserData(idToken);
+      window.location.href = data?.role === "admin" ? "/admin" : "/compiler";
     } catch (error) {
       const authError = error as Error;
       console.error("Gagal masuk:", authError.message);
@@ -151,17 +133,23 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        const idToken = await currentUser.getIdToken();
-        const stored = typeof window !== "undefined" ? localStorage.getItem("userData") : null;
-        if (stored) {
-          setUserData(JSON.parse(stored));
-        } else {
+      try {
+        setUser(currentUser);
+        if (currentUser) {
+          const idToken = await currentUser.getIdToken();
+          if (typeof window !== "undefined") {
+            localStorage.setItem("customToken", idToken);
+          }
           await fetchUserData(idToken);
+        } else {
+          setUserData(null);
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("customToken");
+            localStorage.removeItem("userData");
+          }
         }
-      } else {
-        setUserData(null);
+      } finally {
+        setLoading(false);
       }
     });
 
@@ -176,7 +164,7 @@ export const AuthContextProvider: React.FC<AuthContextProviderProps> = ({
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, userData, googleSignIn, emailSignIn, register, logOut }}>
+    <AuthContext.Provider value={{ user, userData, loading, isAdmin: userData?.role === "admin", emailSignIn, register, logOut }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { useParams } from "next/navigation";
 import Image from "next/image";
 import axios from "axios";
 import Pagination from "@/components/Pagination";
@@ -24,16 +24,9 @@ interface ForumData {
     title: string;
     images: string[];
     likes: number;
-    createdAt: {
-      _seconds: number;
-      _nanoseconds: number;
-    };
+    createdAt: { _seconds: number; _nanoseconds: number };
   };
-  user: {
-    displayName: string;
-    photoURL: string;
-    verified: boolean;
-  };
+  user: { displayName: string; photoURL: string; verified: boolean };
   commentCount: number;
 }
 
@@ -87,11 +80,11 @@ function ForumCard({ post }: { post: ForumData }) {
 
 export default function Page() {
   useEffect(() => {
-    document.title = "User | RWikiStat";
+    document.title = "Profil Pengguna | RWikiStat";
   }, []);
 
-  const pathname = usePathname();
-  const uid = pathname.split("/")[2];
+  const params = useParams();
+  const uid = params.userId as string;
   const [detailUser, setDetailUser] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -102,8 +95,8 @@ export default function Page() {
   useEffect(() => {
     const fetchScore = async () => {
       try {
-        const storedToken = localStorage.getItem("customToken");
         if (!uid) return;
+        const storedToken = localStorage.getItem("customToken");
         const response = await axios.get(`${config.API_URL}/api/user/${uid}/score`, {
           headers: { Authorization: `Bearer ${storedToken}` },
         });

@@ -4,8 +4,8 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FaBookOpen, FaComments, FaTerminal, FaUser, FaUsers } from "react-icons/fa6";
-import { IoIdCardOutline, IoLogOutOutline } from "react-icons/io5";
+import { FaBookOpen, FaComments, FaTerminal, FaUser } from "react-icons/fa6";
+import { IoLogOutOutline } from "react-icons/io5";
 import { MdVerified } from "react-icons/md";
 import { RiRobot2Line } from "react-icons/ri";
 import { UserAuth } from "@/app/context/authContext";
@@ -16,7 +16,6 @@ const navItems = [
   { href: "/modul", label: "Modul", icon: <FaBookOpen /> },
   { href: "/forum", label: "Forum", icon: <FaComments /> },
   { href: "/chatbot", label: "Chatbot", icon: <RiRobot2Line /> },
-  { href: "/userId", label: "User ID", icon: <IoIdCardOutline /> },
   { href: "/profile", label: "Profile", icon: <FaUser /> },
 ];
 
@@ -37,10 +36,6 @@ export default function Sidebar() {
       .catch(() => setIsAdmin(userData?.role === "admin"));
   }, [user, userData?.role]);
 
-  const items = isAdmin
-    ? [...navItems, { href: "/verified", label: "Manage User", icon: <FaUsers /> }]
-    : navItems;
-
   const handleSignOut = async () => {
     try {
       await logOut();
@@ -59,7 +54,19 @@ export default function Sidebar() {
         </Link>
 
         <nav className="mt-7 grid gap-1">
-          {items.map((item) => {
+          {isAdmin ? (
+            <Link
+              href="/admin"
+              onClick={() => {
+                localStorage.removeItem("adminLearningMode");
+                closeSidebar();
+              }}
+              className="mb-3 flex items-center justify-center rounded-2xl border border-brand-200 bg-brand-50 px-3 py-3 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-100"
+            >
+              Kembali ke Admin
+            </Link>
+          ) : null}
+          {navItems.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
               <Link

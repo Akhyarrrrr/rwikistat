@@ -6,13 +6,38 @@ const { admin, firestore, storage } = require("../adminConfig");
 const verifyToken = require("../middleware/verifyToken");
 
 async function addScoreToUser(uid, scoreToAdd) {
-  const userDocRef = firestore.collection("users").doc(uid);
-  const userDoc = await userDocRef.get();
-  if (!userDoc.exists) {
-    await userDocRef.set({ score: scoreToAdd, uid, createdAt: new Date() });
-    return;
-  }
-  await userDocRef.update({ score: (userDoc.data().score || 0) + scoreToAdd });
+  await firestore.collection("users").doc(uid).set({
+    score: admin.firestore.FieldValue.increment(scoreToAdd),
+    uid,
+    createdAt: new Date(),
+  }, { merge: true });
+}
+
+async function isAdmin(uid) {
+  const doc = await firestore.collection("users").doc(uid).get();
+  return doc.exists && doc.data().role === "admin";
+}
+
+async function forumResponse(doc) {
+  const data = doc.data();
+  const user = (await firestore.collection("users").doc(data.uid).get()).data() || {};
+  const commentCount = await getCommentCount(doc.id);
+  return {
+    id: doc.id,
+    data,
+    user: {
+      uid: data.uid,
+      displayName: user.displayName || "Pengguna",
+      photoURL: user.photoURL || "",
+      verified: user.verified || false,
+    },
+    commentCount,
+  };
+}
+
+async function queryCount(query) {
+  const snapshot = await query.count().get();
+  return snapshot.data().count;
 }
 
 router.post("/", verifyToken, upload.array("images", 3), async (req, res) => {
@@ -23,18 +48,20 @@ router.post("/", verifyToken, upload.array("images", 3), async (req, res) => {
     const firestoreResponse = await firestore.collection("forum").add({ topics, uid, title, createdAt: new Date(), likes: 0 });
     const documentId = firestoreResponse.id;
     const imageUrls = [];
+    const imagePaths = [];
     if (images && images.length > 0) {
       for (const image of images) {
         const bucket = storage.bucket();
-        const fileName = `images/${documentId}/${image.originalname}`;
+        const fileName = `images/forum/${documentId}/${Date.now()}_${image.originalname}`;
         const file = bucket.file(fileName);
         await file.save(image.buffer, { metadata: { contentType: image.mimetype } });
         const options = { version: "v4", action: "read", expires: Date.now() + 1000 * 60 * 60 * 24 };
         const [url] = await file.getSignedUrl(options);
         imageUrls.push(url);
+        imagePaths.push(fileName);
       }
     }
-    await firestore.collection("forum").doc(documentId).update({ images: imageUrls });
+    await firestore.collection("forum").doc(documentId).update({ images: imageUrls, imagePaths });
     await addScoreToUser(uid, 5);
     res.json({ message: "Data berhasil ditambahkan." });
   } catch (error) {
@@ -50,10 +77,7 @@ router.get("/search", async (req, res) => {
       return res.status(400).json({ error: "Parameter query tidak ditemukan." });
     }
     const snapshot = await firestore.collection("forum").where("title", ">=", query).where("title", "<=", query + "\uf8ff").get();
-    const forumData = await Promise.all(snapshot.docs.map(async (doc) => {
-      const user = (await firestore.collection("users").doc(doc.data().uid).get()).data();
-      return { id: doc.id, data: doc.data(), user };
-    }));
+    const forumData = await Promise.all(snapshot.docs.map(forumResponse));
     res.json(forumData);
   } catch (error) {
     console.error("Error:", error);
@@ -67,15 +91,11 @@ router.get("/page/", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const startIndex = (page - 1) * itemsPerPage;
-    const totalItemsSnapshot = await firestore.collection("forum").get();
-    const totalItems = totalItemsSnapshot.size;
-    const snapshot = await firestore.collection("forum").orderBy("createdAt", "desc").offset(startIndex).get();
-    const forumData = await Promise.all(snapshot.docs.map(async (doc) => {
-      const user = (await firestore.collection("users").doc(doc.data().uid).get()).data() || {};
-      const commentCount = (await firestore.collection("forum").doc(doc.id).collection("comments").get()).size;
-      return { id: doc.id, data: doc.data(), user: { uid: user.uid || doc.data().uid, displayName: user.displayName || "Pengguna", photoURL: user.photoURL || "", verified: user.verified || false }, commentCount };
-    }));
-    res.json({ forumData: forumData.slice(0, itemsPerPage), currentPage: page, totalPages: Math.ceil(totalItems / itemsPerPage) });
+    const query = firestore.collection("forum").orderBy("createdAt", "desc");
+    const totalItems = await queryCount(firestore.collection("forum"));
+    const snapshot = await query.offset(startIndex).limit(itemsPerPage).get();
+    const forumData = await Promise.all(snapshot.docs.map(forumResponse));
+    res.json({ forumData, currentPage: page, totalPages: Math.ceil(totalItems / itemsPerPage) });
   } catch (error) {
     console.error("Gagal mengambil data:", error);
     res.status(500).json({ error: "Gagal mengambil data." });
@@ -84,13 +104,8 @@ router.get("/page/", async (req, res) => {
 
 router.get("/", async (req, res) => {
   try {
-    const totalItemsSnapshot = await firestore.collection("forum").get();
     const snapshot = await firestore.collection("forum").orderBy("createdAt", "desc").get();
-    const forumData = await Promise.all(snapshot.docs.map(async (doc) => {
-      const user = (await firestore.collection("users").doc(doc.data().uid).get()).data() || {};
-      const commentCount = (await firestore.collection("forum").doc(doc.id).collection("comments").get()).size;
-      return { id: doc.id, data: doc.data(), user: { uid: user.uid || doc.data().uid, displayName: user.displayName || "Pengguna", photoURL: user.photoURL || "", verified: user.verified || false }, commentCount };
-    }));
+    const forumData = await Promise.all(snapshot.docs.map(forumResponse));
     res.json({ forumData });
   } catch (error) {
     console.error("Gagal mengambil data:", error);
@@ -118,9 +133,7 @@ router.get("/:id", async (req, res) => {
     const forumDoc = await firestore.collection("forum").doc(req.params.id).get();
     if (forumDoc.exists) {
       const forumData = forumDoc.data();
-      const commentCount = await getCommentCount(req.params.id);
-      const user = (await firestore.collection("users").doc(forumData.uid).get()).data() || {};
-      res.json({ id: forumDoc.id, data: forumData, user: { uid: user.uid || forumData.uid, displayName: user.displayName || "Pengguna", photoURL: user.photoURL || "", verified: user.verified || false }, commentCount });
+      res.json(await forumResponse(forumDoc));
     } else {
       res.status(404).json({ error: "Data tidak ditemukan" });
     }
@@ -165,15 +178,21 @@ router.post("/like/:id", verifyToken, async (req, res) => {
     const forumId = req.params.id;
     const uid = req.user.uid;
     const forumDocRef = firestore.collection("forum").doc(forumId);
-    const forumDoc = await forumDocRef.get();
-    if (!forumDoc.exists) return res.status(404).json({ error: "Data tidak ditemukan" });
-    const forumData = forumDoc.data();
-    const likedBy = forumData.likedBy || [];
-    if (likedBy.includes(uid)) return res.status(400).json({ error: "Anda sudah memberikan like pada postingan ini." });
-    likedBy.push(uid);
-    await forumDocRef.update({ likes: forumData.likes + 1, likedBy });
+    await firestore.runTransaction(async (tx) => {
+      const forumDoc = await tx.get(forumDocRef);
+      if (!forumDoc.exists) throw new Error("not-found");
+      const forumData = forumDoc.data();
+      const likedBy = forumData.likedBy || [];
+      if (likedBy.includes(uid)) throw new Error("already-liked");
+      tx.update(forumDocRef, {
+        likes: admin.firestore.FieldValue.increment(1),
+        likedBy: admin.firestore.FieldValue.arrayUnion(uid),
+      });
+    });
     res.json({ message: "Postingan disukai." });
   } catch (error) {
+    if (error.message === "not-found") return res.status(404).json({ error: "Data tidak ditemukan" });
+    if (error.message === "already-liked") return res.status(400).json({ error: "Anda sudah memberikan like pada postingan ini." });
     console.error("Gagal menyukai postingan:", error);
     res.status(500).json({ error: "Gagal menyukai postingan." });
   }
@@ -184,15 +203,21 @@ router.post("/unlike/:id", verifyToken, async (req, res) => {
     const forumId = req.params.id;
     const uid = req.user.uid;
     const forumDocRef = firestore.collection("forum").doc(forumId);
-    const forumDoc = await forumDocRef.get();
-    if (!forumDoc.exists) return res.status(404).json({ error: "Data tidak ditemukan" });
-    const forumData = forumDoc.data();
-    const likedBy = forumData.likedBy || [];
-    if (!likedBy.includes(uid)) return res.status(400).json({ error: "Anda belum memberikan like pada postingan ini." });
-    likedBy.splice(likedBy.indexOf(uid), 1);
-    await forumDocRef.update({ likes: forumData.likes - 1, likedBy });
+    await firestore.runTransaction(async (tx) => {
+      const forumDoc = await tx.get(forumDocRef);
+      if (!forumDoc.exists) throw new Error("not-found");
+      const forumData = forumDoc.data();
+      const likedBy = forumData.likedBy || [];
+      if (!likedBy.includes(uid)) throw new Error("not-liked");
+      tx.update(forumDocRef, {
+        likes: admin.firestore.FieldValue.increment(-1),
+        likedBy: admin.firestore.FieldValue.arrayRemove(uid),
+      });
+    });
     res.json({ message: "Postingan tidak disukai." });
   } catch (error) {
+    if (error.message === "not-found") return res.status(404).json({ error: "Data tidak ditemukan" });
+    if (error.message === "not-liked") return res.status(400).json({ error: "Anda belum memberikan like pada postingan ini." });
     console.error("Gagal unlike postingan:", error);
     res.status(500).json({ error: "Gagal unlike postingan." });
   }
@@ -217,14 +242,17 @@ router.post("/bookmark/:id", verifyToken, async (req, res) => {
     const forumId = req.params.id;
     const uid = req.user.uid;
     const forumDocRef = firestore.collection("forum").doc(forumId);
-    const forumDoc = await forumDocRef.get();
-    if (!forumDoc.exists) return res.status(404).json({ error: "Data tidak ditemukan" });
-    const bookmarks = forumDoc.data().bookmarks || [];
-    if (bookmarks.includes(uid)) return res.status(400).json({ error: "Anda sudah memberikan bookmark pada postingan ini." });
-    bookmarks.push(uid);
-    await forumDocRef.update({ bookmarks });
+    await firestore.runTransaction(async (tx) => {
+      const forumDoc = await tx.get(forumDocRef);
+      if (!forumDoc.exists) throw new Error("not-found");
+      const bookmarks = forumDoc.data().bookmarks || [];
+      if (bookmarks.includes(uid)) throw new Error("already-bookmarked");
+      tx.update(forumDocRef, { bookmarks: admin.firestore.FieldValue.arrayUnion(uid) });
+    });
     res.json({ message: "Postingan dibookmark." });
   } catch (error) {
+    if (error.message === "not-found") return res.status(404).json({ error: "Data tidak ditemukan" });
+    if (error.message === "already-bookmarked") return res.status(400).json({ error: "Anda sudah memberikan bookmark pada postingan ini." });
     console.error("Gagal bookmark postingan:", error);
     res.status(500).json({ error: "Gagal bookmark postingan." });
   }
@@ -235,14 +263,17 @@ router.post("/unbookmark/:id", verifyToken, async (req, res) => {
     const forumId = req.params.id;
     const uid = req.user.uid;
     const forumDocRef = firestore.collection("forum").doc(forumId);
-    const forumDoc = await forumDocRef.get();
-    if (!forumDoc.exists) return res.status(404).json({ error: "Data tidak ditemukan" });
-    const bookmarks = forumDoc.data().bookmarks || [];
-    if (!bookmarks.includes(uid)) return res.status(400).json({ error: "Anda belum memberikan bookmark pada postingan ini." });
-    bookmarks.splice(bookmarks.indexOf(uid), 1);
-    await forumDocRef.update({ bookmarks });
+    await firestore.runTransaction(async (tx) => {
+      const forumDoc = await tx.get(forumDocRef);
+      if (!forumDoc.exists) throw new Error("not-found");
+      const bookmarks = forumDoc.data().bookmarks || [];
+      if (!bookmarks.includes(uid)) throw new Error("not-bookmarked");
+      tx.update(forumDocRef, { bookmarks: admin.firestore.FieldValue.arrayRemove(uid) });
+    });
     res.json({ message: "Postingan di unbookmark." });
   } catch (error) {
+    if (error.message === "not-found") return res.status(404).json({ error: "Data tidak ditemukan" });
+    if (error.message === "not-bookmarked") return res.status(400).json({ error: "Anda belum memberikan bookmark pada postingan ini." });
     console.error("Gagal unbookmark postingan:", error);
     res.status(500).json({ error: "Gagal unbookmark postingan." });
   }
@@ -268,13 +299,10 @@ router.get("/bookmarks/:uid", async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const startIndex = (page - 1) * itemsPerPage;
     const query = firestore.collection("forum").where("bookmarks", "array-contains", uid);
-    const totalBookmarks = (await query.get()).size;
-    const snapshot = await query.offset(startIndex).get();
-    const bookmarks = await Promise.all(snapshot.docs.map(async (doc) => {
-      const user = (await firestore.collection("users").doc(doc.data().uid).get()).data();
-      return { id: doc.id, data: doc.data(), user };
-    }));
-    res.json({ bookmarks: bookmarks.slice(0, itemsPerPage), currentBookmarkPage: page, totalBookmarkPages: Math.ceil(totalBookmarks / itemsPerPage), totalBookmarks });
+    const totalBookmarks = await queryCount(query);
+    const snapshot = await query.offset(startIndex).limit(itemsPerPage).get();
+    const bookmarks = await Promise.all(snapshot.docs.map(forumResponse));
+    res.json({ bookmarks, currentBookmarkPage: page, totalBookmarkPages: Math.ceil(totalBookmarks / itemsPerPage), totalBookmarks });
   } catch (error) {
     console.error("Gagal mendapatkan postingan yang dibookmark:", error);
     res.status(500).json({ error: "Gagal mendapatkan postingan yang dibookmark." });
@@ -287,10 +315,7 @@ router.get("/bookmarks-all/:uid", async (req, res) => {
     const query = firestore.collection("forum").where("bookmarks", "array-contains", uid);
     const totalBookmarks = (await query.get()).size;
     const snapshot = await query.get();
-    const bookmarks = await Promise.all(snapshot.docs.map(async (doc) => {
-      const user = (await firestore.collection("users").doc(doc.data().uid).get()).data();
-      return { id: doc.id, data: doc.data(), user };
-    }));
+    const bookmarks = await Promise.all(snapshot.docs.map(forumResponse));
     res.json({ bookmarks, totalBookmarks });
   } catch (error) {
     console.error("Gagal mendapatkan postingan yang dibookmark:", error);
@@ -304,10 +329,7 @@ router.get("/posted-all/:uid", async (req, res) => {
     const query = firestore.collection("forum").where("uid", "==", uid);
     const totalItems = (await query.get()).size;
     const snapshot = await query.get();
-    const forumData = await Promise.all(snapshot.docs.map(async (doc) => {
-      const user = (await firestore.collection("users").doc(doc.data().uid).get()).data();
-      return { id: doc.id, data: doc.data(), user };
-    }));
+    const forumData = await Promise.all(snapshot.docs.map(forumResponse));
     res.json({ forumData, totalPosts: totalItems });
   } catch (error) {
     console.error("Gagal mendapatkan postingan yang diposting:", error);
@@ -321,13 +343,10 @@ router.get("/posted/:uid", async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const startIndex = (page - 1) * itemsPerPage;
     const query = firestore.collection("forum").where("uid", "==", uid);
-    const totalItems = (await query.get()).size;
-    const snapshot = await query.offset(startIndex).get();
-    const forumData = await Promise.all(snapshot.docs.map(async (doc) => {
-      const user = (await firestore.collection("users").doc(doc.data().uid).get()).data();
-      return { id: doc.id, data: doc.data(), user };
-    }));
-    res.json({ forumData: forumData.slice(0, itemsPerPage), currentPage: page, totalPages: Math.ceil(totalItems / itemsPerPage), totalPosts: totalItems });
+    const totalItems = await queryCount(query);
+    const snapshot = await query.offset(startIndex).limit(itemsPerPage).get();
+    const forumData = await Promise.all(snapshot.docs.map(forumResponse));
+    res.json({ forumData, currentPage: page, totalPages: Math.ceil(totalItems / itemsPerPage), totalPosts: totalItems });
   } catch (error) {
     console.error("Gagal mendapatkan postingan yang diposting:", error);
     res.status(500).json({ error: "Gagal mendapatkan postingan yang diposting." });
@@ -336,7 +355,15 @@ router.get("/posted/:uid", async (req, res) => {
 
 router.delete("/:id", verifyToken, async (req, res) => {
   try {
-    await firestore.collection("forum").doc(req.params.id).delete();
+    const ref = firestore.collection("forum").doc(req.params.id);
+    const doc = await ref.get();
+    if (!doc.exists) return res.status(404).json({ error: "Data tidak ditemukan" });
+    const data = doc.data();
+    if (data.uid !== req.user.uid && !(await isAdmin(req.user.uid))) {
+      return res.status(403).json({ error: "Akses ditolak." });
+    }
+    await Promise.all((data.imagePaths || []).map((gcsPath) => storage.bucket().file(gcsPath).delete().catch(() => {})));
+    await ref.delete();
     res.json({ message: "Postingan berhasil dihapus." });
   } catch (error) {
     console.error("Gagal menghapus postingan:", error);

@@ -1,27 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const { admin, firestore } = require("../adminConfig");
+const verifyToken = require("../middleware/verifyToken");
+const requireAdmin = require("../middleware/requireAdmin");
 
-const verifyAdmin = async (req, res, next) => {
-  const bearer = req.headers["authorization"];
-  if (!bearer || !bearer.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Token tidak ditemukan." });
-  }
-  try {
-    const decoded = await admin.auth().verifyIdToken(bearer.split(" ")[1]);
-    const doc = await firestore.collection("users").doc(decoded.uid).get();
-    if (!doc.exists || doc.data().role !== "admin") {
-      return res.status(403).json({ error: "Akses ditolak. Hanya untuk admin." });
-    }
-    req.user = decoded;
-    next();
-  } catch (error) {
-    console.error("Admin verify error:", error);
-    res.status(403).json({ error: "Token tidak valid." });
-  }
-};
+router.use(verifyToken, requireAdmin);
 
-router.get("/users", verifyAdmin, async (req, res) => {
+router.get("/users", async (req, res) => {
   try {
     const snapshot = await firestore.collection("users").get();
     const users = [];
@@ -33,7 +18,7 @@ router.get("/users", verifyAdmin, async (req, res) => {
   }
 });
 
-router.patch("/users/:uid/role", verifyAdmin, async (req, res) => {
+router.patch("/users/:uid/role", async (req, res) => {
   try {
     const { uid } = req.params;
     const { role } = req.body;
@@ -48,7 +33,7 @@ router.patch("/users/:uid/role", verifyAdmin, async (req, res) => {
   }
 });
 
-router.delete("/users/:uid", verifyAdmin, async (req, res) => {
+router.delete("/users/:uid", async (req, res) => {
   try {
     const { uid } = req.params;
     await firestore.collection("users").doc(uid).delete();
@@ -60,7 +45,7 @@ router.delete("/users/:uid", verifyAdmin, async (req, res) => {
   }
 });
 
-router.get("/modules", verifyAdmin, async (req, res) => {
+router.get("/modules", async (req, res) => {
   try {
     const snapshot = await firestore.collection("modul").orderBy("namaModul", "asc").get();
     const modules = [];
@@ -72,7 +57,7 @@ router.get("/modules", verifyAdmin, async (req, res) => {
   }
 });
 
-router.patch("/modules/:id/lock", verifyAdmin, async (req, res) => {
+router.patch("/modules/:id/lock", async (req, res) => {
   try {
     const { id } = req.params;
     const modulRef = firestore.collection("modul").doc(id);

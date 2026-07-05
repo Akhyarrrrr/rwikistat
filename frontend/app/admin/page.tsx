@@ -2,14 +2,12 @@
 export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
-import { UserAuth } from "../context/authContext";
 import config from "@/lib/config";
 import Typography from "@mui/joy/Typography";
 import Sheet from "@mui/joy/Sheet";
 import Box from "@mui/joy/Box";
 
 export default function AdminDashboard() {
-  const { user } = UserAuth();
   const [stats, setStats] = useState({ users: 0, modules: 0, forumPosts: 0 });
 
   useEffect(() => {
