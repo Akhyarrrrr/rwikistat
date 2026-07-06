@@ -6,15 +6,9 @@
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "version": "1.0.2",
     "ios": {
       "buildNumber": "3",
-      "useAppleSignIn": true,
       "supportsTablet": true,
       "bundleIdentifier": "com.rwikistat.ios",
       "googleServicesFile": "./GoogleService-Info.plist",
@@ -40,7 +34,7 @@
       }
     },
     "android": {
-      "buildNumber": "2",
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -59,6 +53,14 @@
       "expo-font",
       "@react-native-google-signin/google-signin",
       "@react-native-firebase/app",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
       [
         "expo-build-properties",
         {

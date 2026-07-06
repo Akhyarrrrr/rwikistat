@@ -1,4 +1,4 @@
-import { useLocalSearchParams, Stack } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   SafeAreaView,
@@ -24,7 +24,6 @@ import {
 } from "@expo/vector-icons";
 import Markdown from "react-native-markdown-display";
 import { useAuth } from "@/context/authContext";
-import { useRouter } from "expo-router";
 import config from "@/config";
 import * as Clipboard from "expo-clipboard";
 
