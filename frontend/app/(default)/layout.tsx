@@ -4,7 +4,7 @@ import { AuthContextProvider } from "../context/authContext";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import * as React from "react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserAuth } from "../context/authContext";
 import { CssVarsProvider, StyledEngineProvider } from "@mui/joy/styles";
@@ -14,20 +14,28 @@ import Box from "@mui/joy/Box";
 function DefaultShell({ children }: { children: React.ReactNode }) {
   const { user, loading, isAdmin } = UserAuth();
   const router = useRouter();
-  const adminLearningMode = typeof window !== "undefined" && localStorage.getItem("adminLearningMode") === "true";
+  const [adminLearningMode, setAdminLearningMode] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    if (loading) return;
+    setIsMounted(true);
+    if (localStorage.getItem("adminLearningMode") === "true") {
+      setAdminLearningMode(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (loading || !isMounted) return;
     if (!user) {
       router.replace("/signin");
       return;
     }
-    if (isAdmin && localStorage.getItem("adminLearningMode") !== "true") {
+    if (isAdmin && !adminLearningMode) {
       router.replace("/admin");
     }
-  }, [isAdmin, loading, router, user]);
+  }, [isAdmin, loading, router, user, isMounted, adminLearningMode]);
 
-  if (loading || !user || (isAdmin && !adminLearningMode)) {
+  if (!isMounted || loading || !user || (isAdmin && !adminLearningMode)) {
     return (
       <main className="grid min-h-[100dvh] place-items-center bg-ink-50 text-sm font-semibold text-ink-600">
         Memuat sesi...

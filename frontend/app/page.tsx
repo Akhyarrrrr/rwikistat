@@ -11,7 +11,7 @@ export const metadata = {
     "Rwikistat Learning App for Data Science, under licensed by RWikiStat Team.",
 };
 
-export default function home() {
+export default function Home() {
   return (
     <>
       <Header />
